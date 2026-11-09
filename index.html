@@ -748,26 +748,7 @@ const NAVIGABLE = ['hub', 'shop', 'daily'];
 
 function buildTabs() {}
 function syncTabs() {}
-function buildSide() {
-  $('#side').innerHTML = `
-  <details class="glass tuner" id="tuner">
-    <summary class="label">Mode test · nom, stats, points</summary>
-    <div class="tun">
-      <label class="trow nrow"><span>Nom</span><input class="nameIn" id="nameIn" maxlength="22" aria-label="Nom de l'athlète" spellcheck="false"></label>
-      ${STAT_KEYS.map(k => `<label class="trow" style="--c:${STATS[k].color}"><span>${STATS[k].label}</span><input type="range" id="r_${k}" min="0" max="100" step="1" aria-label="${STATS[k].label}"><input type="number" id="n_${k}" min="0" max="100" step="1" aria-label="${STATS[k].label} (valeur)"></label>`).join('')}
-    </div>
-    <div class="btnrow">${[5, 25, 50, 75, 100].map(v => `<button class="btn ghost sm" data-act="preset" data-v="${v}">Tout à ${v}</button>`).join('')}<button class="btn ghost sm" data-act="pts">+10 points</button></div>
-  </details>`;
-  STAT_KEYS.forEach(k => {
-    const set = e => setStat(k, e.target.value);
-    $('#r_' + k).addEventListener('input', set);
-    $('#n_' + k).addEventListener('input', set);
-    $('#n_' + k).addEventListener('change', e => { e.target.value = clamp(parseFloat(e.target.value) || 0, 0, 100); setStat(k, e.target.value); });
-  });
-  const inp = $('#nameIn');
-  inp.value = S.name;
-  inp.addEventListener('input', () => { S.name = inp.value.trim() || 'Athlète'; save(); if (view === 'hub') { clearTimeout(refreshT); refreshT = setTimeout(viewHub, 350); } });
-}
+function buildSide() { $('#side').innerHTML = ''; }
 function updateHud() {
   $('#btnSound').innerHTML = ic(S.muted ? 'mute' : 'vol');
 }
@@ -1329,8 +1310,6 @@ function dailyQuit() {
   const st = cur(); if (st.scores[D.i] == null) { st.scores[D.i] = 0; st.humans[D.i] = 'Manche abandonnée'; if (!PRACT) { st.cur = -1; save(); } }
   dailyAdvance();
 }
-function dailyReplay() { const dd = dailyState(); dd.scores = Array(DAILY.length).fill(null); dd.humans = []; dd.cur = -1; dd.result = null; save(); viewDaily(); }   // mode test : rejouer à volonté
-function dailyPractice() { dClean(); PRACT = { scores:Array(DAILY.length).fill(null), humans:[], seed:Math.random().toString(36).slice(2) }; dailyStart(0); }
 function dailyComplete() {
   const dd = dailyState(), sc = dd.scores, total = sc.reduce((a, b) => a + b, 0), joker = dailyVariant() === 'joker';
   const yk = dayKey(new Date(Date.now() - 864e5));
@@ -1362,8 +1341,8 @@ function viewDailyResult() {
     <div class="dres5">${DAILY.map((g, i) => { const gg = gradeOf(st.scores[i]); return `<div class="dr5" style="--c:${STATS[g.stat].color}"><div class="gic">${ic(g.icon)}</div><div class="dr5t"><b>${g.name}</b><span class="dr5h">${st.humans[i] || ''}</span></div><span class="dr5s">${st.scores[i]}</span><span class="dgr" style="--g:${GRADE_COL[gg]}">${gg}</span></div>`; }).join('')}</div>
     ${!practice && r ? `<div class="gainbox" style="--c:var(--gold)"><div class="gl"><b>+${fmtGain(r.pts)} point${r.pts > 1 ? 's' : ''}</b><span>note globale ${r.grade} : ${fmtGain(r.base)} pt · série de ${r.streak} jour${r.streak > 1 ? 's' : ''} (bonus ×${fmtGain(r.bonus)})${r.joker ? ' · joker ×1,5' : ''} · tu en as ${fmtGain(S.pts || 0)}</span></div></div>` : '<p class="hint">Les scores d\'entraînement libre ne rapportent aucun point.</p>'}
     <div class="dshare"><pre id="dShareTxt">${dailyShareText()}</pre><button class="btn ghost sm" data-act="dcopy" type="button">Copier mon résultat</button></div>
-    <div class="btnrow">${practice ? '' : '<button class="btn" data-act="gym" data-to="shop" type="button">Dépenser mes points au vestiaire</button>'}${practice ? '' : '<button class="btn ghost" data-act="dreplay" type="button">Rejouer (mode test · illimité)</button>'}<button class="btn ghost" data-act="dpractice" type="button">S'entraîner (non enregistré)</button>${practice ? '<button class="btn" data-act="dback" type="button">Retour à l\'entraînement</button>' : ''}</div>
-    ${practice ? '' : `<p class="hint">Prochain entraînement officiel dans <b id="dNext" class="mono">${untilMidnight()}</b>.</p>`}
+    <div class="btnrow">${practice ? '' : '<button class="btn" data-act="gym" data-to="shop" type="button">Dépenser mes points au vestiaire</button>'}</div>
+    ${practice ? '' : `<p class="hint">Prochain entraînement dans <b id="dNext" class="mono">${untilMidnight()}</b>.</p>`}
   </section>`;
 }
 
@@ -1388,14 +1367,10 @@ document.addEventListener('click', e => {
   else if (a === 'dstart') dailyStart(+b.dataset.i);
   else if (a === 'dgo') dailyBegin();
   else if (a === 'dnext') dailyAdvance();
-  else if (a === 'dpractice') dailyPractice();
-  else if (a === 'dreplay') dailyReplay();
   else if (a === 'dback') viewDaily();
   else if (a === 'dquit') dailyQuit();
   else if (a === 'dcopy') { const t = dailyShareText(); if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(() => toast('Résultat copié.'), () => toast('Sélectionne le texte pour le copier.', 'bad')); else toast('Sélectionne le texte pour le copier.', 'bad'); }
   else if (a === 'buy') buyItem(b.dataset.id, b.dataset.v);
-  else if (a === 'preset') { STAT_KEYS.forEach(k => S.stats[k] = +b.dataset.v); refreshAll(); if (view === 'shop') viewShop(); else if (view === 'hub') viewHub(); toast('Toutes les stats à ' + b.dataset.v + '.'); }
-  else if (a === 'pts') { S.pts = round2((S.pts || 0) + 10); refreshAll(); if (view === 'shop') viewShop(); else if (view === 'hub') viewHub(); toast('+10 points.'); }
   else if (a === 'mute') { S.muted = !S.muted; updateHud(); save(); if (!S.muted) Sfx.ok(); }
   else if (a === 'reset') {
     if (!resetArmed) { resetArmed = true; b.classList.add('armed'); b.textContent = 'Confirmer ?'; resetT = setTimeout(disarm, 3000); }
