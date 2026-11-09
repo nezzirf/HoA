@@ -949,11 +949,11 @@ function gymSVG(nAff) {
   <rect y="400" width="1200" height="240" fill="url(#gfloor)"/>
   <path d="M0 400H1200" stroke="#2c3b5e" stroke-width="3"/>
   ${floorLines}<g stroke="rgba(255,255,255,.05)" stroke-width="2"><path d="M0 450H1200M0 505H1200M0 575H1200"/></g>
-  <g filter="url(#glow)" fill="#d6f3ff"><rect x="60" y="14" width="260" height="6" rx="3"/><rect x="470" y="14" width="260" height="6" rx="3"/><rect x="880" y="14" width="260" height="6" rx="3"/></g>
-  <polygon points="60,20 320,20 380,400 0,400" fill="url(#gbeam)"/><polygon points="470,20 730,20 790,400 410,400" fill="url(#gbeam)"/><polygon points="880,20 1140,20 1200,400 820,400" fill="url(#gbeam)"/>
+  <g filter="url(#glow)" fill="#d6f3ff"><rect x="60" y="14" width="260" height="6" rx="3"/><rect x="470" y="60" width="260" height="6" rx="3"/><rect x="880" y="14" width="260" height="6" rx="3"/></g>
+  <polygon points="60,20 320,20 380,400 0,400" fill="url(#gbeam)"/><polygon points="470,66 730,66 790,400 410,400" fill="url(#gbeam)"/><polygon points="880,20 1140,20 1200,400 820,400" fill="url(#gbeam)"/>
 
   <!-- enseigne néon + horloge -->
-  <text class="neon" x="600" y="84" text-anchor="middle" filter="url(#glow)" style="font-size:38px;letter-spacing:4px">HALL OF ATHLÈTE</text>
+  <text class="neon" x="600" y="46" text-anchor="middle" filter="url(#glow)" style="font-size:38px;letter-spacing:4px">HALL OF ATHLÈTE</text>
   <g transform="translate(870 54)"><circle r="24" fill="#0d1527" stroke="#2c3d63" stroke-width="3"/><g stroke="#7f93b8" stroke-width="2">${[0, 90, 180, 270].map(a => `<path d="M0 -19V-15" transform="rotate(${a})"/>`).join('')}</g>
     <path d="M0 0V-12" stroke="#e9eefb" stroke-width="3" stroke-linecap="round" transform="rotate(${hA})"/><path d="M0 0V-17" stroke="#5ff2d0" stroke-width="2" stroke-linecap="round" transform="rotate(${mA})"/></g>
 
