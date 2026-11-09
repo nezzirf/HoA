@@ -835,11 +835,12 @@ function gymSVG(nAff) {
     .map(([c, hs, y]) => row(y, hs, c) + `<rect x="740" y="${y}" width="256" height="9" rx="3" fill="#3f4e72"/>`).join('');
   const floorLines = Array.from({ length:11 }, (_, i) => { const x = i * 120; return `<path d="M${x} 400 L${600 + (x - 600) * 1.7} 640" stroke="rgba(255,255,255,.05)" stroke-width="2"/>`; }).join('');
   /* --- vestiaire --- */
-  const LK = [['protein', 'book'], ['glasses', 'inhaler'], ['feather'], ['towel']];   // contenu rangé sur les étagères ; les chaussures restent sur le banc
+  const LK = [['protein', 'book'], ['glasses', 'inhaler'], ['feather'], null];   // contenu rangé sur les étagères ; les chaussures restent sur le banc
   const PL = [268, 324, 380], okIt = it => (S.pts || 0) + 1e-9 >= MIN_BUY && S.stats[it.stat] < 100;
   const shelfItem = (id, x, y) => { if (id === 'towel') return `<g transform="translate(${x + 9} ${y - 14})"><rect width="32" height="14" rx="3" fill="#e9eefb"/><rect y="5" width="32" height="3" fill="#5ff2d0" opacity=".8"/></g>`; const it = ITEM_BY[id];
     return `<g transform="translate(${x + 11} ${y - 27})"><title>${it.name} · ${STATS[it.stat].label}</title>${itemSVG(id, 28)}${okIt(it) ? '<circle cx="14" cy="-5" r="2.6" fill="#ffcc55"/>' : ''}</g>`; };
   const lockers = LK.map((its, i) => { const x = 40 + i * 56;
+    if (!its) return `<g><rect x="${x}" y="210" width="50" height="190" rx="4" fill="url(#glocker)" stroke="#0c1626" stroke-width="2"/><path d="M${x + 11} 224h28M${x + 11} 231h28M${x + 11} 238h28" stroke="#0c1626" stroke-width="2.4" stroke-linecap="round"/><rect x="${x + 36}" y="290" width="5" height="22" rx="2" fill="#9db4d8"/><text x="${x + 25}" y="268" text-anchor="middle" font-size="12" font-weight="700" fill="rgba(255,255,255,.45)" font-family="JetBrains Mono,monospace">${i + 1}</text></g>`;
     return `<g><rect x="${x}" y="210" width="50" height="190" rx="4" fill="#0a1220" stroke="#0c1626" stroke-width="2"/>${PL.map(y => `<rect x="${x + 3}" y="${y}" width="44" height="5" rx="2" fill="#3f5a86"/>`).join('')}${its.map((id, k) => shelfItem(id, x, PL[k])).join('')}<polygon points="${x},210 ${x - 13},221 ${x - 13},389 ${x},400" fill="#2a4a78" stroke="#0c1626" stroke-width="2"/><path d="M${x - 9} 236h6M${x - 9} 242h6" stroke="#0c1626" stroke-width="2" stroke-linecap="round"/><rect x="${x - 10}" y="300" width="4" height="18" rx="2" fill="#9db4d8"/></g>`; }).join('');
   const sh = ITEM_BY.shoes, bench = `<g transform="translate(236 384)"><title>${sh.name} · ${STATS[sh.stat].label}</title>${itemSVG('shoes', 30)}${okIt(sh) ? '<circle cx="15" cy="-5" r="2.6" fill="#ffcc55"/>' : ''}</g>`;
   const dg = dd.result ? dd.result.grade : null;
