@@ -562,6 +562,31 @@ body:not(.hubmode) #stage{width:100%; max-width:1240px; margin-inline:auto}
 .ptsbox small{font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted)}
 .iico{width:64px; height:64px; border-radius:16px; display:grid; place-items:center; background:color-mix(in srgb,var(--c) 14%,transparent); border:1px solid color-mix(in srgb,var(--c) 40%,transparent)}
 .iico svg{width:40px; height:40px}
+/* ---------- thème clair + options ---------- */
+:root[data-theme="light"]{
+  color-scheme:light;
+  --bg:#eaf0f8; --bg-2:#f4f7fc; --card:rgba(255,255,255,.82); --card-solid:#ffffff;
+  --line:rgba(30,55,110,.13); --line-2:rgba(30,55,110,.28);
+  --fg:#14203a; --muted:#4a587a; --dim:#7a869f;
+  --accent:#0aa88a; --gold:#b87d00; --ok:#12a56e; --bad:#d63351;
+  --force:#e8591f; --speed:#2a82e0; --endu:#8a5ce0; --agi:#1fae63; --prec:#e0357f; --ment:#b89d00;
+}
+:root[data-theme="light"] body{background-image:radial-gradient(900px 520px at 88% -8%, rgba(78,166,255,.22), transparent 60%),radial-gradient(760px 520px at -6% 18%, rgba(180,140,255,.16), transparent 60%),radial-gradient(700px 400px at 50% 110%, rgba(95,242,208,.14), transparent 60%)}
+:root[data-theme="light"] .toast{box-shadow:0 12px 40px -14px rgba(20,40,90,.35)}
+.setov{position:fixed; inset:0; z-index:80; background:rgba(4,8,16,.6); display:grid; place-items:center; padding:16px; backdrop-filter:blur(4px)}
+.setp{width:min(440px,100%); max-height:calc(100dvh - 32px); overflow:auto; padding:20px; display:flex; flex-direction:column; gap:16px; background:var(--card-solid); border:1px solid var(--line-2); border-radius:18px; box-shadow:0 30px 80px -20px rgba(0,0,0,.6)}
+.setp h2{margin:0; font:800 italic 28px/1 var(--f-display); text-transform:uppercase; letter-spacing:.03em}
+.setrow{display:flex; flex-direction:column; gap:8px}
+.setrow>.label{margin:0}
+.seg{display:flex; gap:6px; flex-wrap:wrap}
+.seg button{flex:1; min-width:84px; padding:9px 12px; border-radius:10px; border:1px solid var(--line-2); background:transparent; color:var(--muted); font:700 13px var(--f-body); cursor:pointer}
+.seg button[aria-pressed="true"]{color:var(--fg); border-color:var(--accent); background:color-mix(in srgb,var(--accent) 16%,transparent)}
+.setp input[type=text]{width:100%; box-sizing:border-box; padding:10px 12px; border-radius:10px; border:1px solid var(--line-2); background:transparent; color:var(--fg); font:600 15px var(--f-body)}
+.setp input[type=text]:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+.setp input[type=range]{width:100%; accent-color:var(--accent)}
+.volrow{display:flex; align-items:center; gap:12px}
+.volrow output{font:700 13px var(--f-mono); color:var(--muted); min-width:42px; text-align:right}
+.btn.danger{--c:var(--bad)}
 </style>
 
 <div class="shell" id="app">
@@ -572,7 +597,7 @@ body:not(.hubmode) #stage{width:100%; max-width:1240px; margin-inline:auto}
     </div>
     <div class="hud">
       <button class="icon-btn" id="btnSound" data-act="mute" aria-label="Activer ou couper le son"></button>
-      <button class="icon-btn" id="btnReset" data-act="reset" aria-label="Réinitialiser la partie"><svg class="i" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg></button>
+      <button class="icon-btn" id="btnSet" data-act="settings" aria-label="Options" aria-haspopup="dialog"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     </div>
   </header>
 
@@ -673,7 +698,7 @@ const KEY = 'apex-athlete-v2';
 const defaults = () => ({
   perfect:{},
   daily:{ date:'', scores:[null, null, null, null, null], humans:[], cur:-1, streak:0, last:'', hist:[], result:null },
-  name:'Alex Moreau', muted:false, pts:0, items:{}, sessions:0,
+  name:'Alex Moreau', muted:false, theme:'auto', vol:55, pts:0, items:{}, sessions:0,
   stats:{ force:5, speed:5, endurance:5, agility:5, precision:5, mental:5 }
 });
 function load() {
@@ -707,7 +732,7 @@ const Sfx = {
     try {
       if (!this.ctx) {
         const C = window.AudioContext || window.webkitAudioContext; if (!C) return;
-        this.ctx = new C(); this.master = this.ctx.createGain(); this.master.gain.value = .55; this.master.connect(this.ctx.destination);
+        this.ctx = new C(); this.master = this.ctx.createGain(); this.master.gain.value = (S.vol == null ? 55 : S.vol) / 100; this.master.connect(this.ctx.destination);
       }
       if (this.ctx.state === 'suspended') this.ctx.resume();
     } catch (e) {}
@@ -1354,14 +1379,51 @@ function toast(msg, kind = 'ok') {
   $('#toasts').appendChild(t); setTimeout(() => t.remove(), 3000);
 }
 let resetArmed = false, resetT = 0;
-function disarm() { resetArmed = false; const b = $('#btnReset'); b.classList.remove('armed'); b.innerHTML = '<svg class="i" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg>'; }
+function disarm() { resetArmed = false; const b = $('#btnReset'); if (b) { b.classList.remove('armed'); b.textContent = 'Réinitialiser la partie'; } }
+/* ---------- options : son, pseudo, thème ---------- */
+const THEMES = [['auto', 'Comme mon appareil'], ['light', 'Clair'], ['dark', 'Sombre']];
+const darkMQ = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+function applyTheme() {
+  const th = S.theme || 'auto', dark = th === 'dark' || (th === 'auto' && (!darkMQ || darkMQ.matches));
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+}
+if (darkMQ && darkMQ.addEventListener) darkMQ.addEventListener('change', applyTheme);
+function setVol(v) { S.vol = clamp(+v || 0, 0, 100); if (Sfx.master) Sfx.master.gain.value = S.vol / 100; }
+function closeSettings() { const o = $('#setov'); if (o) o.remove(); disarm(); const b = $('#btnSet'); if (b) b.focus(); }
+function openSettings() {
+  closeSettings();
+  const o = document.createElement('div'); o.className = 'setov'; o.id = 'setov';
+  o.innerHTML = `<div class="setp" role="dialog" aria-modal="true" aria-label="Options">
+    <h2>Options</h2>
+    <div class="setrow"><span class="label">Pseudo</span><input type="text" id="setName" maxlength="22" spellcheck="false" aria-label="Pseudo de l'athlète"></div>
+    <div class="setrow"><span class="label">Son</span>
+      <div class="seg" id="setSound"><button type="button" data-v="on" aria-pressed="${!S.muted}">Activé</button><button type="button" data-v="off" aria-pressed="${!!S.muted}">Coupé</button></div>
+      <div class="volrow"><input type="range" id="setVol" min="0" max="100" step="5" aria-label="Volume"><output id="setVolOut"></output></div></div>
+    <div class="setrow"><span class="label">Thème</span><div class="seg" id="setTheme">${THEMES.map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="${(S.theme || 'auto') === v}">${l}</button>`).join('')}</div></div>
+    <div class="setrow"><span class="label">Partie</span><button class="btn ghost danger" id="btnReset" data-act="reset" type="button">Réinitialiser la partie</button></div>
+    <div class="btnrow"><button class="btn" data-act="closeset" type="button">Fermer</button></div></div>`;
+  document.body.appendChild(o);
+  const name = $('#setName'), vol = $('#setVol'), out = $('#setVolOut');
+  name.value = S.name; vol.value = S.vol == null ? 55 : S.vol; out.textContent = vol.value + ' %';
+  name.addEventListener('input', () => { S.name = name.value.trim() || 'Athlète'; save(); if (view === 'hub') { clearTimeout(refreshT); refreshT = setTimeout(viewHub, 300); } });
+  vol.addEventListener('input', () => { setVol(vol.value); out.textContent = vol.value + ' %'; save(); });
+  vol.addEventListener('change', () => { Sfx.init(); if (!S.muted) Sfx.ok(); });
+  const seg = (id, fn) => $('#' + id).addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (!b) return; $('#' + id).querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); fn(b.dataset.v); });
+  seg('setSound', v => { S.muted = v === 'off'; updateHud(); save(); if (!S.muted) { Sfx.init(); Sfx.ok(); } });
+  seg('setTheme', v => { S.theme = v; applyTheme(); save(); });
+  o.addEventListener('mousedown', e => { if (e.target === o) closeSettings(); });
+  name.focus();
+}
 document.addEventListener('keydown', e => { // les éléments de la salle se pilotent aussi au clavier
+  if (e.key === 'Escape' && $('#setov')) { closeSettings(); return; }
   if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.hs')) { e.preventDefault(); gymGo(e.target.dataset.to); }
 });
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
   const a = b.dataset.act;
-  if (a === 'back') go(lastTab);
+  if (a === 'settings') openSettings();
+  else if (a === 'closeset') closeSettings();
+  else if (a === 'back') go(lastTab);
   else if (a === 'gym') gymGo(b.dataset.to);
   else if (a === 'home') go('hub');
   else if (a === 'dstart') dailyStart(+b.dataset.i);
@@ -1374,14 +1436,14 @@ document.addEventListener('click', e => {
   else if (a === 'mute') { S.muted = !S.muted; updateHud(); save(); if (!S.muted) Sfx.ok(); }
   else if (a === 'reset') {
     if (!resetArmed) { resetArmed = true; b.classList.add('armed'); b.textContent = 'Confirmer ?'; resetT = setTimeout(disarm, 3000); }
-    else { clearTimeout(resetT); try { localStorage.removeItem(KEY); } catch (er) {} S = defaults(); disarm(); buildSide(); refreshAll(); go('hub'); toast('Nouvelle carrière lancée.'); }
+    else { clearTimeout(resetT); try { localStorage.removeItem(KEY); } catch (er) {} S = defaults(); closeSettings(); applyTheme(); refreshAll(); go('hub'); toast('Nouvelle carrière lancée.'); }
   }
 });
 
 /* =====================================================================
    9. DÉMARRAGE
    ===================================================================== */
-buildSide(); buildTabs(); updateHud(); updateSide(); go('hub');
+applyTheme(); buildSide(); buildTabs(); updateHud(); updateSide(); go('hub');
 setInterval(() => { updateHud(); const dn = $('#dNext'); if (dn) dn.textContent = untilMidnight(); }, 1000);
 setInterval(save, 5000);
 window.addEventListener('beforeunload', save);
