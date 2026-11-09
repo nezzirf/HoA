@@ -1524,7 +1524,7 @@ function openSettings() {
       <div class="volrow"><input type="range" id="setVol" min="0" max="100" step="5" aria-label="Volume"><output id="setVolOut"></output></div></div>
     <div class="setrow"><span class="label">Thème</span><div class="seg" id="setTheme">${THEMES.map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="${(S.theme || 'auto') === v}">${l}</button>`).join('')}</div></div>
     <div class="setrow"><span class="label">Partie</span><button class="btn ghost danger" id="btnReset" data-act="reset" type="button">Réinitialiser la partie</button></div>
-    <div class="btnrow"><button class="btn" data-act="closeset" type="button">Fermer</button></div></div>`;
+    <div class="btnrow"><button class="btn" data-act="closeset" type="button">Fermer</button></div><small style="color:var(--dim);text-align:center">Version 51 · vestiaire centré</small></div>`;
   document.body.appendChild(o);
   const name = $('#setName'), vol = $('#setVol'), out = $('#setVolOut');
   name.value = S.name; vol.value = S.vol == null ? 55 : S.vol; out.textContent = vol.value + ' %';
