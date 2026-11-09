@@ -928,7 +928,7 @@ function gymSVG(nAff) {
     <rect x="58" y="24" width="234" height="106" rx="10" fill="#0c1730" stroke="#33466f" stroke-width="3"/><rect x="66" y="32" width="218" height="90" rx="6" fill="none" stroke="rgba(95,242,208,.22)" stroke-width="1.5"/>
     <text x="175" y="50" text-anchor="middle" class="bs">BARÈME DES POINTS</text><text x="175" y="63" text-anchor="middle" class="bs" style="font-size:8px;letter-spacing:.14em">SELON LA NOTE GLOBALE DU JOUR</text>
     ${GRADES.map((g, i) => { const cx = 83 + i * 31.5; return `${g === dg ? `<rect x="${cx - 14}" y="68" width="28" height="48" rx="6" fill="none" stroke="${GRADE_COL[g]}" stroke-width="2"/>` : ''}<text x="${cx}" y="94" text-anchor="middle" style="font:800 italic 26px var(--f-display);fill:${GRADE_COL[g]}">${g}</text><text x="${cx}" y="110" text-anchor="middle" class="bv" style="font-size:9.5px">${fmtGain(POINTS[g])}</text>`; }).join('')}</g>`;
-  return `<svg class="gym" viewBox="0 0 1200 640" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Salle de sport : tableau des stats, racks d'haltères, vestiaire et porte vers les courses">
+  return `<svg class="gym" viewBox="0 -44 1200 684" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Salle de sport : tableau des stats, racks d'haltères, vestiaire et porte vers les courses">
   <defs>
     <linearGradient id="gwall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#16213f"/><stop offset="1" stop-color="#0b1326"/></linearGradient>
     <linearGradient id="gfloor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a2336"/><stop offset="1" stop-color="#0a0f1c"/></linearGradient>
@@ -944,16 +944,16 @@ function gymSVG(nAff) {
   </defs>
 
   <!-- mur, sol, ambiance -->
-  <rect width="1200" height="400" fill="url(#gwall)"/>
-  <g stroke="rgba(255,255,255,.035)" stroke-width="2">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => `<path d="M${i * 120} 0V400"/>`).join('')}</g>
+  <rect y="-44" width="1200" height="444" fill="url(#gwall)"/>
+  <g stroke="rgba(255,255,255,.035)" stroke-width="2">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => `<path d="M${i * 120} -44V400"/>`).join('')}</g>
   <rect y="400" width="1200" height="240" fill="url(#gfloor)"/>
   <path d="M0 400H1200" stroke="#2c3b5e" stroke-width="3"/>
   ${floorLines}<g stroke="rgba(255,255,255,.05)" stroke-width="2"><path d="M0 450H1200M0 505H1200M0 575H1200"/></g>
-  <g filter="url(#glow)" fill="#d6f3ff"><rect x="60" y="14" width="260" height="6" rx="3"/><rect x="470" y="60" width="260" height="6" rx="3"/><rect x="880" y="14" width="260" height="6" rx="3"/></g>
-  <polygon points="60,20 320,20 380,400 0,400" fill="url(#gbeam)"/><polygon points="470,66 730,66 790,400 410,400" fill="url(#gbeam)"/><polygon points="880,20 1140,20 1200,400 820,400" fill="url(#gbeam)"/>
+  <g filter="url(#glow)" fill="#d6f3ff"><rect x="60" y="14" width="260" height="6" rx="3"/><rect x="470" y="14" width="260" height="6" rx="3"/><rect x="880" y="14" width="260" height="6" rx="3"/></g>
+  <polygon points="60,20 320,20 380,400 0,400" fill="url(#gbeam)"/><polygon points="470,20 730,20 790,400 410,400" fill="url(#gbeam)"/><polygon points="880,20 1140,20 1200,400 820,400" fill="url(#gbeam)"/>
 
   <!-- enseigne néon + horloge -->
-  <text class="neon" x="600" y="46" text-anchor="middle" filter="url(#glow)" style="font-size:38px;letter-spacing:4px">HALL OF ATHLÈTE</text>
+  <text class="neon" x="600" y="-2" text-anchor="middle" filter="url(#glow)" style="font-size:38px;letter-spacing:4px">HALL OF ATHLÈTE</text>
   <g transform="translate(870 54)"><circle r="24" fill="#0d1527" stroke="#2c3d63" stroke-width="3"/><g stroke="#7f93b8" stroke-width="2">${[0, 90, 180, 270].map(a => `<path d="M0 -19V-15" transform="rotate(${a})"/>`).join('')}</g>
     <path d="M0 0V-12" stroke="#e9eefb" stroke-width="3" stroke-linecap="round" transform="rotate(${hA})"/><path d="M0 0V-17" stroke="#5ff2d0" stroke-width="2" stroke-linecap="round" transform="rotate(${mA})"/></g>
 
