@@ -825,7 +825,7 @@ function go(v) {
 
 /* ---------- La salle de sport : hub plein écran, les stats vivent dans le décor ---------- */
 let hubX = 400, hubBusy = false;           // position de l'athlète dans la salle
-const HUB_SPOTS = { shop:150, daily:600, mirror:860 };
+const HUB_SPOTS = { shop:176, daily:600, mirror:860 };
 const STAT_HEX = { force:'#ff7a45', speed:'#4ea6ff', endurance:'#b48cff', agility:'#46e08a', precision:'#ff5fa8', mental:'#f2e35b' };
 /* ---------- personnage personnalisable ---------- */
 const SKINS = ['#f6d3b8', '#e8b998', '#d9a98a', '#b9805a', '#8a5a3b', '#5b3a26'];
@@ -979,6 +979,7 @@ function gymSVG(nAff) {
   ${poster}
 
   <!-- VESTIAIRE -->
+  <g transform="translate(26 0)">
   <g class="hs" data-act="gym" data-to="shop" tabindex="0" role="button" aria-label="Vestiaire : acheter des objets avec mes points">
     <g class="art">
       <rect x="44" y="162" width="214" height="34" rx="9" fill="#0b2431" stroke="#5ff2d0" stroke-width="2"/>
@@ -990,6 +991,7 @@ function gymSVG(nAff) {
     <rect class="hl" x="22" y="150" width="272" height="300" rx="14"/>
     ${nAff ? `<g class="badge"><circle cx="252" cy="200" r="16" fill="#ffcc55"/><text x="252" y="206" text-anchor="middle" font-size="16" font-weight="800" fill="#1b1200" font-family="JetBrains Mono,monospace">${nAff}</text></g>` : ''}
     <g class="tag"><rect x="38" y="114" width="226" height="28" rx="14"/><text x="151" y="133" text-anchor="middle">Vestiaire · acheter des objets</text></g>
+  </g>
   </g>
 
   <!-- vitrine à trophées -->
