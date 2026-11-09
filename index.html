@@ -587,7 +587,10 @@ body:not(.hubmode) #stage{width:100%; max-width:1240px; margin-inline:auto}
 .volrow{display:flex; align-items:center; gap:12px}
 .volrow output{font:700 13px var(--f-mono); color:var(--muted); min-width:42px; text-align:right}
 .btn.danger{--c:var(--bad)}
-#avStyle{display:grid; grid-template-columns:repeat(3,1fr)}
+#avStyle{display:grid; grid-template-columns:repeat(4,1fr)}
+.cards.acc{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+.accprev svg{display:block; height:150px; width:auto; margin:0 auto}
+.accc.lock .accprev{filter:grayscale(1) brightness(.55); opacity:.7}
 .avwrap{display:flex; gap:14px; align-items:center}
 .avwrap svg{flex:none; background:color-mix(in srgb,var(--accent) 7%,transparent); border:1px solid var(--line); border-radius:14px}
 .avopts{display:flex; flex-direction:column; gap:7px; flex:1; min-width:0}
@@ -706,7 +709,7 @@ const KEY = 'apex-athlete-v2';
 const defaults = () => ({
   perfect:{},
   daily:{ date:'', scores:[null, null, null, null, null], humans:[], cur:-1, streak:0, last:'', hist:[], result:null },
-  name:'Alex Moreau', muted:false, theme:'auto', vol:55, avatar:{ skin:'#d9a98a', hair:'#1a1f2e', style:'bandeau', shirt:0, shorts:'#14203a', band:'#5ff2d0', plates:'#ff7a45' }, pts:0, items:{}, sessions:0,
+  name:'Alex Moreau', muted:false, theme:'auto', vol:55, avatar:{ skin:'#d9a98a', hair:'#1a1f2e', style:'court', shirt:0, shorts:'#14203a', band:'#5ff2d0', plates:'#ff7a45', equip:[] }, pts:0, items:{}, sessions:0,
   stats:{ force:0, speed:0, endurance:0, agility:0, precision:0, mental:0 }
 });
 function load() {
@@ -825,45 +828,59 @@ const SHIRTS = [['#5ff2d0', '#4ea6ff'], ['#ff7a45', '#ffcc55'], ['#ff5fa8', '#b4
 const SHORTS = ['#14203a', '#1b1b22', '#7a1f2e', '#1f5a3a', '#4a3a8a', '#e9eefb'];
 const ACCENTS = ['#5ff2d0', '#ff7a45', '#ff5fa8', '#ffcc55', '#4ea6ff', '#e9eefb'];
 const PLATES = ['#ff7a45', '#4ea6ff', '#46e08a', '#ff5fa8', '#ffcc55', '#b48cff'];
-const STYLES = [['bandeau', 'Bandeau'], ['casquette', 'Casquette'], ['court', 'Courts'], ['long', 'Longs'], ['crete', 'Crête'], ['chauve', 'Chauve']];
-const AV_DEF = { skin:'#d9a98a', hair:'#1a1f2e', style:'bandeau', shirt:0, shorts:'#14203a', band:'#5ff2d0', plates:'#ff7a45' };
+const STYLES = [['court', 'Courts'], ['long', 'Longs'], ['crete', 'Crête'], ['chauve', 'Chauve']];
+/* accessoires : purement esthétiques, un nouveau à chaque palier de 10 de moyenne */
+const ACCS = [
+  { id:'serretete', n:'Serre-tête', slot:'head', lvl:10 }, { id:'casquette', n:'Casquette', slot:'head', lvl:20 },
+  { id:'lunettes', n:'Lunettes de soleil', slot:'face', lvl:30 }, { id:'poignets', n:'Serre-poignets', slot:'wrist', lvl:40 },
+  { id:'chaussettes', n:'Chaussettes hautes', slot:'feet', lvl:50 }, { id:'bonnet', n:'Bonnet', slot:'head', lvl:60 },
+  { id:'serviette', n:'Serviette', slot:'shoulder', lvl:70 }, { id:'medaille', n:'Médaille', slot:'neck', lvl:80 },
+  { id:'ceinture', n:'Ceinture de champion', slot:'waist', lvl:90 }, { id:'couronne', n:'Couronne', slot:'head', lvl:100 }
+];
+const ACC_BY = Object.fromEntries(ACCS.map(a => [a.id, a]));
+const accOpen = a => overall() + 1e-9 >= a.lvl;
+const AV_DEF = { skin:'#d9a98a', hair:'#1a1f2e', style:'court', shirt:0, shorts:'#14203a', band:'#5ff2d0', plates:'#ff7a45', equip:[] };
 const isCol = v => typeof v === 'string' && /^#[0-9a-f]{3,8}$/i.test(v);
 function avOf() {   // apparence validée (une valeur inconnue retombe sur la valeur par défaut)
   const a = Object.assign({}, AV_DEF, S.avatar || {});
   ['skin', 'hair', 'shorts', 'band', 'plates'].forEach(k => { if (!isCol(a[k])) a[k] = AV_DEF[k]; });
   if (!STYLES.some(s => s[0] === a.style)) a.style = AV_DEF.style;
   a.shirt = SHIRTS[a.shirt] ? a.shirt : 0;
+  a.equip = (Array.isArray(a.equip) ? a.equip : []).filter(id => ACC_BY[id] && accOpen(ACC_BY[id]));
   return a;
 }
 function hairSVG(av) {
-  const h = av.hair, dome = `<path d="M-20 -176a20 20 0 0 1 40 0v2h-40z" fill="${h}"/>`;
-  return ({
-    bandeau:   dome + `<rect x="-20" y="-181" width="40" height="7" rx="3" fill="${av.band}"/>`,
-    casquette: `<path d="M-21 -173a21 21 0 0 1 42 0z" fill="${av.band}"/><rect x="6" y="-177" width="25" height="5" rx="2.5" fill="${av.band}"/><rect x="6" y="-174" width="25" height="2" fill="rgba(0,0,0,.25)"/>`,
-    court:     dome,
-    long:      dome + `<rect x="-25" y="-178" width="12" height="44" rx="6" fill="${h}"/>`,
-    crete:     `<polygon points="-8,-188 -5,-208 0,-193 5,-210 10,-193 15,-206 14,-186" fill="${h}"/>`,
-    chauve:    ''
+  const h = av.hair, dome = `<path d="M-20 -176a20 20 0 0 1 40 0v2h-40z" fill="${h}"/>`, has = id => av.equip.includes(id);
+  const hair = ({
+    court: dome, long: dome + `<rect x="-25" y="-178" width="12" height="44" rx="6" fill="${h}"/>`,
+    crete: `<polygon points="-8,-188 -5,-208 0,-193 5,-210 10,-193 15,-206 14,-186" fill="${h}"/>`, chauve: ''
   })[av.style];
+  const hat = has('couronne') ? `<path d="M-15 -190V-206L-8 -198 0 -209 8 -198 15 -206V-190z" fill="#ffcc55" stroke="#b8860b" stroke-width="1.5" stroke-linejoin="round"/><circle cx="0" cy="-196" r="2.4" fill="#ff5470"/>`
+    : has('bonnet') ? `<path d="M-21 -172a21 21 0 0 1 42 0z" fill="${av.band}"/><rect x="-21" y="-179" width="42" height="8" rx="3" fill="rgba(255,255,255,.3)"/><circle cx="0" cy="-196" r="6" fill="#e9eefb"/>`
+    : has('casquette') ? `<path d="M-21 -173a21 21 0 0 1 42 0z" fill="${av.band}"/><rect x="6" y="-177" width="25" height="5" rx="2.5" fill="${av.band}"/><rect x="6" y="-174" width="25" height="2" fill="rgba(0,0,0,.25)"/>`
+    : has('serretete') ? `<rect x="-20" y="-181" width="40" height="7" rx="3" fill="${av.band}"/>` : '';
+  return hair + hat;
 }
+const faceSVG = av => av.equip.includes('lunettes') ? `<rect x="-2" y="-174" width="23" height="9" rx="4" fill="#0b1020"/><path d="M-2 -171L-19 -173" stroke="#0b1020" stroke-width="2.4" stroke-linecap="round"/><rect x="2" y="-173" width="7" height="2" rx="1" fill="rgba(255,255,255,.4)"/>` : '';
+const avSVG = (av, id) => `<svg viewBox="-62 -232 124 262" aria-hidden="true"><defs><linearGradient id="gs${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${SHIRTS[av.shirt][0]}"/><stop offset="1" stop-color="${SHIRTS[av.shirt][1]}"/></linearGradient></defs><ellipse cx="0" cy="4" rx="42" ry="8" fill="#000" opacity=".35"/>${athleteBody(av, 'gs' + id)}</svg>`;
 function athleteBody(av, gid) {
   return `      <g transform="scale(1)">
         <g>
           <animateTransform attributeName="transform" type="translate" values="0 0;0 -2;0 0" dur="3s" repeatCount="indefinite"/>
           <g><animateTransform class="wa" attributeName="transform" type="rotate" values="0 -9 -78;24 -9 -78;0 -9 -78;-24 -9 -78;0 -9 -78" dur=".55s" begin="indefinite" repeatCount="indefinite"/>
-            <rect x="-17" y="-80" width="16" height="72" rx="7" fill="#1d2b47"/><rect x="-23" y="-13" width="27" height="13" rx="6" fill="#eaf7ff"/><rect x="-23" y="-4" width="27" height="4" rx="2" fill="${av.band}"/></g>
+            <rect x="-17" y="-80" width="16" height="72" rx="7" fill="#1d2b47"/>${av.equip.includes('chaussettes') ? `<rect x="-17" y="-36" width="16" height="25" rx="4" fill="#eaf7ff"/><rect x="-17" y="-36" width="16" height="5" fill="${av.band}"/>` : ''}<rect x="-23" y="-13" width="27" height="13" rx="6" fill="#eaf7ff"/><rect x="-23" y="-4" width="27" height="4" rx="2" fill="${av.band}"/></g>
           <g><animateTransform class="wa" attributeName="transform" type="rotate" values="0 9 -78;-24 9 -78;0 9 -78;24 9 -78;0 9 -78" dur=".55s" begin="indefinite" repeatCount="indefinite"/>
-            <rect x="1" y="-80" width="16" height="72" rx="7" fill="#27375a"/><rect x="-3" y="-13" width="27" height="13" rx="6" fill="#eaf7ff"/><rect x="-3" y="-4" width="27" height="4" rx="2" fill="${av.band}"/></g>
-          <rect x="-34" y="-148" width="13" height="58" rx="6" fill="${av.skin}"/>
-          <rect x="-27" y="-152" width="54" height="80" rx="19" fill="url(#${gid})"/>
-          <rect x="-27" y="-94" width="54" height="28" rx="11" fill="${av.shorts}"/>
+            <rect x="1" y="-80" width="16" height="72" rx="7" fill="#27375a"/>${av.equip.includes('chaussettes') ? `<rect x="1" y="-36" width="16" height="25" rx="4" fill="#eaf7ff"/><rect x="1" y="-36" width="16" height="5" fill="${av.band}"/>` : ''}<rect x="-3" y="-13" width="27" height="13" rx="6" fill="#eaf7ff"/><rect x="-3" y="-4" width="27" height="4" rx="2" fill="${av.band}"/></g>
+          <rect x="-34" y="-148" width="13" height="58" rx="6" fill="${av.skin}"/>${av.equip.includes('poignets') ? `<rect x="-35" y="-98" width="15" height="7" rx="3" fill="${av.band}"/>` : ''}
+          <rect x="-27" y="-152" width="54" height="80" rx="19" fill="url(#${gid})"/>${av.equip.includes('serviette') ? `<rect x="-30" y="-156" width="17" height="46" rx="6" fill="#e9eefb"/><rect x="-30" y="-134" width="17" height="5" fill="${av.band}"/>` : ''}${av.equip.includes('medaille') ? `<path d="M-9 -152L0 -122L9 -152" stroke="#ff5470" stroke-width="3.2" fill="none" stroke-linejoin="round"/><circle cx="0" cy="-120" r="7" fill="#ffcc55" stroke="#b8860b" stroke-width="1.5"/><circle cx="0" cy="-120" r="2.6" fill="#b8860b"/>` : ''}
+          <rect x="-27" y="-94" width="54" height="28" rx="11" fill="${av.shorts}"/>${av.equip.includes('ceinture') ? `<rect x="-27" y="-97" width="54" height="7" rx="2" fill="#ffcc55"/><rect x="-7" y="-100" width="14" height="12" rx="2" fill="#ff5470" stroke="#fff" stroke-width="1"/>` : ''}
           <g><rect x="21" y="-150" width="13" height="36" rx="6" fill="${av.skin}"/>
             <g><animateTransform attributeName="transform" type="rotate" values="0 28 -116;-80 28 -116;0 28 -116" keyTimes="0;.5;1" calcMode="spline" keySplines=".4 0 .2 1;.4 0 .2 1" dur="2.6s" repeatCount="indefinite"/>
-              <rect x="21" y="-116" width="13" height="36" rx="6" fill="${av.skin}"/>
+              <rect x="21" y="-116" width="13" height="36" rx="6" fill="${av.skin}"/>${av.equip.includes('poignets') ? `<rect x="20" y="-90" width="15" height="7" rx="3" fill="${av.band}"/>` : ''}
               <rect x="13" y="-84" width="30" height="5" rx="2" fill="#aab6cf"/><rect x="9" y="-93" width="8" height="23" rx="3" fill="${av.plates}"/><rect x="39" y="-93" width="8" height="23" rx="3" fill="${av.plates}"/></g></g>
           <circle cx="0" cy="-172" r="20" fill="${av.skin}"/>
           ${hairSVG(av)}
-          <circle cx="8" cy="-168" r="2.2" fill="#1a1f2e"/>
+          <circle cx="8" cy="-168" r="2.2" fill="#1a1f2e"/>${faceSVG(av)}
         </g>
       </g>`;
 }
@@ -941,7 +958,7 @@ function gymSVG(nAff) {
     <rect x="328" y="126" width="364" height="254" rx="8" fill="none" stroke="rgba(95,242,208,.22)" stroke-width="1.5"/>
     <text x="338" y="144" class="bs">TABLEAU DES STATS</text>
     <text x="338" y="168" class="bn">${nm}</text>
-    <text x="684" y="166" text-anchor="end" class="bh">NIV. ${Math.floor(o)} · ${rankName(o).toUpperCase()}</text>
+    <text x="684" y="166" text-anchor="end" class="bh">MOYENNE ${f1(o)}</text>
     <path d="M336 176H684" stroke="rgba(255,255,255,.12)"/>
     ${rows}
     <path d="M336 350H684" stroke="rgba(255,255,255,.12)"/>
@@ -1017,7 +1034,7 @@ function viewHub() {
   stage.innerHTML = `<div class="gymwrap">${gymSVG(nAff)}</div>
   <div class="gymcards">
     <button class="gc2" type="button" data-act="gym" data-to="daily" style="--c:var(--force)">${ic('dumbbell', 28)}<div><b>Entraînement du jour</b><small>${done ? 'Terminé' + (dd.result ? ' · note ' + dd.result.grade : '') + ' · à demain' : DAILY.length + ' épreuves · 1 fois par jour'}</small></div></button>
-    <button class="gc2" type="button" data-act="gym" data-to="shop" style="--c:var(--accent)">${ic('chest', 28)}<div><b>Vestiaire</b><small>${fmtGain(S.pts || 0)} point${(S.pts || 0) > 1 ? 's' : ''} · ${nAff ? nAff + ' objet' + (nAff > 1 ? 's' : '') + ' à ta portée' : 'des objets pour monter tes stats'}</small></div></button>
+    <button class="gc2" type="button" data-act="gym" data-to="shop" style="--c:var(--accent)">${ic('chest', 28)}<div><b>Vestiaire</b><small>${fmtGain(S.pts || 0)} point${(S.pts || 0) > 1 ? 's' : ''} · ${nAff ? nAff + ' objet' + (nAff > 1 ? 's' : '') + ' à ta portée' : 'objets et accessoires'}</small></div></button>
     <button class="gc2" type="button" data-act="gym" data-to="pvp" style="--c:var(--gold)">${ic('trophy', 28)}<div><b>La porte · PvP</b><small>Bientôt disponible</small></div></button>
   </div>
   <p class="hint gymhint" style="margin-top:12px">Fais l'entraînement du jour aux racks : ta note globale te rapporte des points. Dépense-les au vestiaire pour acheter des objets qui font monter tes stats.</p>`;
@@ -1044,7 +1061,24 @@ function viewShop() {
       <p>${it.blurb}</p>
       <div class="gmeta"><span>Investi <b>${fmtGain(own)} pt</b></span></div>
       ${maxed ? '<button class="btn" disabled>Stat au maximum</button>' : `<button class="btn" data-act="buy" data-id="${it.id}" data-v="1" ${dis}>+${fmtGain(Math.min(1, pts, room))} ${st.label}</button>`}
+    </article>`; }).join('')}</div>` + wardrobeHTML();
+}
+function wardrobeHTML() {
+  const o = overall(), base = avOf(), nxt = ACCS.find(a => !accOpen(a));
+  return `<div class="glass qbanner" style="margin-top:18px"><div style="flex:1;min-width:240px"><b>Garde-robe · accessoires</b><span>Un accessoire se débloque à chaque palier de 10 de moyenne (la tienne : <b style="display:inline;color:var(--accent)">${f1(o)}</b>). C'est uniquement esthétique. ${nxt ? `Prochain : ${nxt.n} à ${nxt.lvl} de moyenne.` : 'Tout est débloqué !'}</span></div></div>
+  <div class="cards acc">${ACCS.map(a => { const open = accOpen(a), on = base.equip.includes(a.id), pv = Object.assign({}, base, { equip:[a.id] });
+    return `<article class="glass gcard accc ${open ? '' : 'lock'}" style="--c:var(--accent)">
+      <div class="accprev">${avSVG(pv, 'w' + a.id)}</div>
+      <div><div class="gtag">${open ? (on ? 'Équipé' : 'Débloqué') : 'Moyenne ' + a.lvl + ' requise'}</div><h3>${a.n}</h3></div>
+      <button class="btn ${on ? 'ghost' : ''}" data-act="acc" data-id="${a.id}" ${open ? '' : 'disabled'}>${open ? (on ? 'Retirer' : 'Équiper') : 'Verrouillé'}</button>
     </article>`; }).join('')}</div>`;
+}
+function toggleAcc(id) {
+  const a = ACC_BY[id]; if (!a || !accOpen(a)) return;
+  const av = avOf(); let eq = av.equip.filter(x => x !== id);
+  if (!av.equip.includes(id)) eq = eq.filter(x => ACC_BY[x].slot !== a.slot).concat(id);
+  S.avatar = Object.assign(av, { equip:eq }); save(); Sfx.pick();
+  const y = window.scrollY; viewShop(); window.scrollTo(0, y);
 }
 function buyItem(id, v) {
   const it = ITEM_BY[id], st = STATS[it.stat], pts = S.pts || 0, room = round2(100 - S.stats[it.stat]);
@@ -1439,7 +1473,7 @@ function openSettings() {
   o.innerHTML = `<div class="setp" role="dialog" aria-modal="true" aria-label="Options">
     <h2>Options</h2>
     <div class="setrow"><span class="label">Pseudo</span><input type="text" id="setName" maxlength="22" spellcheck="false" aria-label="Pseudo de l'athlète"></div>
-    <div class="setrow"><span class="label">Personnage</span>
+    <div class="setrow"><span class="label">Personnage · accessoires dans le vestiaire</span>
       <div class="avwrap"><svg id="avPrev" viewBox="-62 -232 124 262" width="104" aria-label="Aperçu du personnage"></svg>
         <div class="avopts">
           <div class="swrow" data-k="skin"><small>Peau</small>${SKINS.map(c => `<button type="button" class="sw" data-v="${c}" style="background:${c}" aria-label="Peau ${c}"></button>`).join('')}</div>
@@ -1499,6 +1533,7 @@ document.addEventListener('click', e => {
   else if (a === 'dquit') dailyQuit();
   else if (a === 'dcopy') { const t = dailyShareText(); if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(() => toast('Résultat copié.'), () => toast('Sélectionne le texte pour le copier.', 'bad')); else toast('Sélectionne le texte pour le copier.', 'bad'); }
   else if (a === 'buy') buyItem(b.dataset.id, b.dataset.v);
+  else if (a === 'acc') toggleAcc(b.dataset.id);
   else if (a === 'mute') { S.muted = !S.muted; updateHud(); save(); if (!S.muted) Sfx.ok(); }
   else if (a === 'reset') {
     if (!resetArmed) { resetArmed = true; b.classList.add('armed'); b.textContent = 'Confirmer ?'; resetT = setTimeout(disarm, 3000); }
