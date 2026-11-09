@@ -598,6 +598,12 @@ body:not(.hubmode) #stage{width:100%; max-width:1240px; margin-inline:auto}
 .swrow small{width:56px; font-size:11px; color:var(--muted); font-weight:700}
 .sw{width:24px; height:24px; border-radius:50%; border:2px solid var(--line-2); cursor:pointer; padding:0}
 .sw[aria-pressed="true"]{border-color:var(--fg); box-shadow:0 0 0 2px var(--accent)}
+.mirrorhd{display:flex; align-items:center; gap:24px; padding:18px 22px; margin-bottom:14px; flex-wrap:wrap}
+.mirbox{width:170px; padding:10px; border-radius:26px; background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 14%,transparent),transparent); border:3px solid color-mix(in srgb,var(--gold) 45%,#5b3f2a)}
+.mirbox svg{display:block; width:100%; height:auto}
+.mirtxt{flex:1; min-width:220px; display:flex; flex-direction:column; gap:8px}
+.mirtxt h2{margin:0; font:800 italic 40px/1 var(--f-display); text-transform:uppercase}
+.mirtxt p{margin:0; color:var(--muted); font-size:14px}
 </style>
 
 <div class="shell" id="app">
@@ -780,7 +786,7 @@ window.addEventListener('keydown', () => Sfx.init(), { capture:true });
    4. HUD, PROFIL, ONGLETS
    ===================================================================== */
 let view = 'hub', lastTab = 'hub', G = null; // G = mini-jeu / scène en cours
-const NAVIGABLE = ['hub', 'shop', 'daily'];
+const NAVIGABLE = ['hub', 'shop', 'daily', 'mirror'];
 
 function buildTabs() {}
 function syncTabs() {}
@@ -813,13 +819,13 @@ function go(v) {
   document.body.classList.toggle('hubmode', v === 'hub');
   if (NAVIGABLE.includes(v)) lastTab = v;
   syncTabs();
-  if (v === 'hub') viewHub(); else if (v === 'daily') viewDaily(); else if (v === 'shop') viewShop();
+  if (v === 'hub') viewHub(); else if (v === 'daily') viewDaily(); else if (v === 'shop') viewShop(); else if (v === 'mirror') viewMirror();
   window.scrollTo({ top:0, behavior:'smooth' });
 }
 
 /* ---------- La salle de sport : hub plein écran, les stats vivent dans le décor ---------- */
 let hubX = 560, hubBusy = false;           // position de l'athlète dans la salle
-const HUB_SPOTS = { shop:150, daily:865 };
+const HUB_SPOTS = { shop:150, daily:865, mirror:390 };
 const STAT_HEX = { force:'#ff7a45', speed:'#4ea6ff', endurance:'#b48cff', agility:'#46e08a', precision:'#ff5fa8', mental:'#f2e35b' };
 /* ---------- personnage personnalisable ---------- */
 const SKINS = ['#f6d3b8', '#e8b998', '#d9a98a', '#b9805a', '#8a5a3b', '#5b3a26'];
@@ -1019,6 +1025,22 @@ function gymSVG(nAff) {
     <g class="tag"><rect x="1016" y="76" width="176" height="28" rx="14"/><text x="1104" y="95" text-anchor="middle">La porte · PvP bientôt</text></g>
   </g>
 
+  <!-- MIROIR : la garde-robe -->
+  <g class="hs" data-act="gym" data-to="mirror" tabindex="0" role="button" aria-label="Miroir : la garde-robe d'accessoires">
+    <g class="art">
+      <clipPath id="cmir"><rect x="352" y="436" width="76" height="152" rx="36"/></clipPath>
+      <path d="M352 598L338 632M428 598L442 632" stroke="#3a281a" stroke-width="6" stroke-linecap="round"/>
+      <rect x="338" y="422" width="104" height="180" rx="48" fill="#6b4a30" stroke="#3a281a" stroke-width="3"/>
+      <rect x="352" y="436" width="76" height="152" rx="36" fill="url(#gmirror)"/>
+      <g clip-path="url(#cmir)"><g transform="translate(390 584) scale(.5)">${athleteBody(av, 'gshirt')}</g>
+        <polygon points="352,436 382,436 352,500" fill="rgba(255,255,255,.14)"/><polygon points="428,520 428,560 396,588 410,588" fill="rgba(255,255,255,.08)"/></g>
+      <rect x="338" y="402" width="104" height="22" rx="8" fill="#0b2431" stroke="#5ff2d0" stroke-width="2"/>
+      <text class="sgn" x="390" y="418" text-anchor="middle" fill="#5ff2d0" style="font-size:14px;letter-spacing:3px">MIROIR</text>
+    </g>
+    <rect class="hl" x="326" y="396" width="128" height="244" rx="14"/>
+    <g class="tag"><rect x="322" y="604" width="136" height="26" rx="13"/><text x="390" y="622" text-anchor="middle">Miroir · garde-robe</text></g>
+  </g>
+
   <!-- athlète -->
   <g id="ath" style="transform:translate(${hubX}px,592px)">
     <g id="athFlip" transform="scale(1 1)">
@@ -1034,7 +1056,8 @@ function viewHub() {
   stage.innerHTML = `<div class="gymwrap">${gymSVG(nAff)}</div>
   <div class="gymcards">
     <button class="gc2" type="button" data-act="gym" data-to="daily" style="--c:var(--force)">${ic('dumbbell', 28)}<div><b>Entraînement du jour</b><small>${done ? 'Terminé' + (dd.result ? ' · note ' + dd.result.grade : '') + ' · à demain' : DAILY.length + ' épreuves · 1 fois par jour'}</small></div></button>
-    <button class="gc2" type="button" data-act="gym" data-to="shop" style="--c:var(--accent)">${ic('chest', 28)}<div><b>Vestiaire</b><small>${fmtGain(S.pts || 0)} point${(S.pts || 0) > 1 ? 's' : ''} · ${nAff ? nAff + ' objet' + (nAff > 1 ? 's' : '') + ' à ta portée' : 'objets et accessoires'}</small></div></button>
+    <button class="gc2" type="button" data-act="gym" data-to="shop" style="--c:var(--accent)">${ic('chest', 28)}<div><b>Vestiaire</b><small>${fmtGain(S.pts || 0)} point${(S.pts || 0) > 1 ? 's' : ''} · ${nAff ? nAff + ' objet' + (nAff > 1 ? 's' : '') + ' à ta portée' : 'des objets pour monter tes stats'}</small></div></button>
+    <button class="gc2" type="button" data-act="gym" data-to="mirror" style="--c:var(--prec)">${ic('target', 28)}<div><b>Miroir</b><small>Garde-robe · ${ACCS.filter(accOpen).length} / ${ACCS.length} accessoires débloqués</small></div></button>
     <button class="gc2" type="button" data-act="gym" data-to="pvp" style="--c:var(--gold)">${ic('trophy', 28)}<div><b>La porte · PvP</b><small>Bientôt disponible</small></div></button>
   </div>
   <p class="hint gymhint" style="margin-top:12px">Fais l'entraînement du jour aux racks : ta note globale te rapporte des points. Dépense-les au vestiaire pour acheter des objets qui font monter tes stats.</p>`;
@@ -1061,7 +1084,7 @@ function viewShop() {
       <p>${it.blurb}</p>
       <div class="gmeta"><span>Investi <b>${fmtGain(own)} pt</b></span></div>
       ${maxed ? '<button class="btn" disabled>Stat au maximum</button>' : `<button class="btn" data-act="buy" data-id="${it.id}" data-v="1" ${dis}>+${fmtGain(Math.min(1, pts, room))} ${st.label}</button>`}
-    </article>`; }).join('')}</div>` + wardrobeHTML();
+    </article>`; }).join('')}</div>`;
 }
 function wardrobeHTML() {
   const o = overall(), base = avOf(), nxt = ACCS.find(a => !accOpen(a));
@@ -1073,12 +1096,16 @@ function wardrobeHTML() {
       <button class="btn ${on ? 'ghost' : ''}" data-act="acc" data-id="${a.id}" ${open ? '' : 'disabled'}>${open ? (on ? 'Retirer' : 'Équiper') : 'Verrouillé'}</button>
     </article>`; }).join('')}</div>`;
 }
+function viewMirror() {
+  const av = avOf();
+  stage.innerHTML = homeBtn() + `<div class="glass mirrorhd"><div class="mirbox">${avSVG(av, 'big')}</div><div class="mirtxt"><div class="label">Le miroir</div><h2>${S.name.replace(/[<>&"]/g, '')}</h2><p>Un accessoire se débloque à chaque palier de 10 de moyenne. Ils sont uniquement esthétiques.</p><div class="btnrow"><button class="btn ghost" data-act="settings" type="button">Couleurs et coiffure</button></div></div></div>` + wardrobeHTML();
+}
 function toggleAcc(id) {
   const a = ACC_BY[id]; if (!a || !accOpen(a)) return;
   const av = avOf(); let eq = av.equip.filter(x => x !== id);
   if (!av.equip.includes(id)) eq = eq.filter(x => ACC_BY[x].slot !== a.slot).concat(id);
   S.avatar = Object.assign(av, { equip:eq }); save(); Sfx.pick();
-  const y = window.scrollY; viewShop(); window.scrollTo(0, y);
+  const y = window.scrollY; if (view === 'mirror') viewMirror(); else viewShop(); window.scrollTo(0, y);
 }
 function buyItem(id, v) {
   const it = ITEM_BY[id], st = STATS[it.stat], pts = S.pts || 0, room = round2(100 - S.stats[it.stat]);
