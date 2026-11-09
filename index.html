@@ -824,8 +824,8 @@ function go(v) {
 }
 
 /* ---------- La salle de sport : hub plein écran, les stats vivent dans le décor ---------- */
-let hubX = 560, hubBusy = false;           // position de l'athlète dans la salle
-const HUB_SPOTS = { shop:150, daily:865, mirror:390 };
+let hubX = 400, hubBusy = false;           // position de l'athlète dans la salle
+const HUB_SPOTS = { shop:150, daily:600, mirror:860 };
 const STAT_HEX = { force:'#ff7a45', speed:'#4ea6ff', endurance:'#b48cff', agility:'#46e08a', precision:'#ff5fa8', mental:'#f2e35b' };
 /* ---------- personnage personnalisable ---------- */
 const SKINS = ['#f6d3b8', '#e8b998', '#d9a98a', '#b9805a', '#8a5a3b', '#5b3a26'];
@@ -953,22 +953,26 @@ function gymSVG(nAff) {
   <polygon points="60,20 320,20 380,400 0,400" fill="url(#gbeam)"/><polygon points="470,20 730,20 790,400 410,400" fill="url(#gbeam)"/><polygon points="880,20 1140,20 1200,400 820,400" fill="url(#gbeam)"/>
 
   <!-- enseigne néon + horloge -->
-  <text class="neon" x="620" y="84" text-anchor="middle" filter="url(#glow)" style="font-size:38px;letter-spacing:4px">HALL OF ATHLÈTE</text>
-  <g transform="translate(396 64)"><circle r="24" fill="#0d1527" stroke="#2c3d63" stroke-width="3"/><g stroke="#7f93b8" stroke-width="2">${[0, 90, 180, 270].map(a => `<path d="M0 -19V-15" transform="rotate(${a})"/>`).join('')}</g>
+  <text class="neon" x="600" y="84" text-anchor="middle" filter="url(#glow)" style="font-size:38px;letter-spacing:4px">HALL OF ATHLÈTE</text>
+  <g transform="translate(870 54)"><circle r="24" fill="#0d1527" stroke="#2c3d63" stroke-width="3"/><g stroke="#7f93b8" stroke-width="2">${[0, 90, 180, 270].map(a => `<path d="M0 -19V-15" transform="rotate(${a})"/>`).join('')}</g>
     <path d="M0 0V-12" stroke="#e9eefb" stroke-width="3" stroke-linecap="round" transform="rotate(${hA})"/><path d="M0 0V-17" stroke="#5ff2d0" stroke-width="2" stroke-linecap="round" transform="rotate(${mA})"/></g>
 
-  <!-- TABLEAU DES STATS : tes statistiques accrochées au mur -->
-  <g class="board" aria-label="Tableau des statistiques">
-    <path d="M360 118V104M660 118V104" stroke="#33466f" stroke-width="3"/>
-    <rect x="320" y="118" width="380" height="270" rx="12" fill="#0c1730" stroke="#33466f" stroke-width="3"/>
-    <rect x="328" y="126" width="364" height="254" rx="8" fill="none" stroke="rgba(95,242,208,.22)" stroke-width="1.5"/>
-    <text x="338" y="144" class="bs">TABLEAU DES STATS</text>
-    <text x="338" y="168" class="bn">${nm}</text>
-    <text x="684" y="166" text-anchor="end" class="bh">MOYENNE ${f1(o)}</text>
-    <path d="M336 176H684" stroke="rgba(255,255,255,.12)"/>
-    ${rows}
-    <path d="M336 350H684" stroke="rgba(255,255,255,.12)"/>
-    <text x="338" y="375" class="bs">POINTS</text><circle cx="418" cy="370" r="8" fill="#ffcc55" filter="url(#glow)"/><text x="418" y="374" text-anchor="middle" font-size="10" font-weight="800" fill="#4a3300" font-family="JetBrains Mono,monospace">P</text><text x="434" y="376" class="bv" style="font-size:20px;fill:#ffcc55">${fmtGain(S.pts || 0)}</text><text x="684" y="375" text-anchor="end" class="bs">SÉRIE ${dd.streak} J</text>
+  <!-- TABLEAU DES STATS : au centre, au-dessus des racks -->
+  <g class="board" aria-label="Tableau des statistiques" transform="translate(464 100) scale(.8)">
+    <path d="M80 0V-12M260 0V-12" stroke="#33466f" stroke-width="3"/>
+    <rect width="340" height="190" rx="12" fill="#0c1730" stroke="#33466f" stroke-width="3"/>
+    <rect x="8" y="8" width="324" height="174" rx="8" fill="none" stroke="rgba(95,242,208,.22)" stroke-width="1.5"/>
+    <text x="16" y="26" class="bs">TABLEAU DES STATS</text>
+    <text x="16" y="50" class="bn">${nm}</text>
+    <text x="324" y="48" text-anchor="end" class="bh">MOYENNE ${f1(o)}</text>
+    <path d="M14 58H326" stroke="rgba(255,255,255,.12)"/>
+    ${STAT_KEYS.map((k, i) => { const x0 = 16 + Math.floor(i / 3) * 164, y = 84 + (i % 3) * 30, v = S.stats[k], hex = STAT_HEX[k];
+      return `<g><g transform="translate(${x0} ${y - 14}) scale(.64)" fill="none" stroke="${hex}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${ICON_PATHS[STATS[k].icon]}</g>
+        <text x="${x0 + 20}" y="${y}" class="bt" style="fill:${hex};font-size:12px">${STATS[k].label.toUpperCase()}</text>
+        <text x="${x0 + 146}" y="${y}" text-anchor="end" class="bv" style="font-size:12px">${f1(v)}</text>
+        <rect x="${x0}" y="${y + 5}" width="146" height="7" rx="3.5" fill="rgba(255,255,255,.09)"/><rect x="${x0}" y="${y + 5}" width="${Math.max(3, v / 100 * 146)}" height="7" rx="3.5" style="fill:${hex}" filter="url(#glow)"/></g>`; }).join('')}
+    <path d="M14 152H326" stroke="rgba(255,255,255,.12)"/>
+    <text x="16" y="174" class="bs">POINTS</text><circle cx="94" cy="169" r="8" fill="#ffcc55" filter="url(#glow)"/><text x="94" y="173" text-anchor="middle" font-size="10" font-weight="800" fill="#4a3300" font-family="JetBrains Mono,monospace">P</text><text x="108" y="175" class="bv" style="font-size:17px;fill:#ffcc55">${fmtGain(S.pts || 0)}</text><text x="324" y="174" text-anchor="end" class="bs">SÉRIE ${dd.streak} J</text>
   </g>
 
   <!-- barème des points -->
@@ -991,11 +995,12 @@ function gymSVG(nAff) {
   <!-- vitrine à trophées -->
   <g aria-label="Vitrine à trophées"><text x="740" y="98" class="bs">PALMARÈS</text>${cups}<rect x="740" y="140" width="256" height="6" rx="3" fill="#3f4e72"/></g>
 
-  <!-- RACKS D'HALTÈRES -->
+  <!-- RACKS D'HALTÈRES : au milieu, sous le tableau -->
+  <g transform="translate(600 258) scale(.6) translate(-871 -152)">
   <g class="hs" data-act="gym" data-to="daily" tabindex="0" role="button" aria-label="Racks d'haltères : l'entraînement du jour">
     <g class="art">
       <rect x="752" y="160" width="232" height="34" rx="9" fill="#2a1a12" stroke="#ff7a45" stroke-width="2"/>
-      <text class="sgn" x="868" y="184" text-anchor="middle" fill="#ff9d6a" style="font-size:16px;letter-spacing:1.5px">ENTRAÎNEMENT DU JOUR</text>
+      <text class="sgn" x="868" y="184" text-anchor="middle" fill="#ff9d6a" style="font-size:21px;letter-spacing:1px">ENTRAÎNEMENT DU JOUR</text>
       <rect x="736" y="212" width="12" height="190" rx="3" fill="#4a5a82"/><rect x="988" y="212" width="12" height="190" rx="3" fill="#4a5a82"/>
       <rect x="736" y="204" width="264" height="10" rx="4" fill="#5b6c96"/>
       ${rack}
@@ -1003,7 +1008,8 @@ function gymSVG(nAff) {
     </g>
     ${dSq}
     <rect class="hl" x="724" y="152" width="294" height="280" rx="14"/>
-    <g class="tag"><rect x="752" y="436" width="232" height="28" rx="14"/><text x="868" y="455" text-anchor="middle">Racks · l'entraînement du jour</text></g>
+    <g class="tag"><rect x="722" y="438" width="300" height="36" rx="18"/><text x="872" y="462" text-anchor="middle" style="font-size:20px">Racks · l'entraînement du jour</text></g>
+  </g>
   </g>
 
   <!-- PORTE -> COURSES -->
@@ -1025,20 +1031,19 @@ function gymSVG(nAff) {
     <g class="tag"><rect x="1016" y="76" width="176" height="28" rx="14"/><text x="1104" y="95" text-anchor="middle">La porte · PvP bientôt</text></g>
   </g>
 
-  <!-- MIROIR : la garde-robe -->
+  <!-- MIROIR MURAL : la garde-robe, entre les racks et la porte -->
   <g class="hs" data-act="gym" data-to="mirror" tabindex="0" role="button" aria-label="Miroir : la garde-robe d'accessoires">
     <g class="art">
-      <clipPath id="cmir"><rect x="352" y="436" width="76" height="152" rx="36"/></clipPath>
-      <path d="M352 598L338 632M428 598L442 632" stroke="#3a281a" stroke-width="6" stroke-linecap="round"/>
-      <rect x="338" y="422" width="104" height="180" rx="48" fill="#6b4a30" stroke="#3a281a" stroke-width="3"/>
-      <rect x="352" y="436" width="76" height="152" rx="36" fill="url(#gmirror)"/>
-      <g clip-path="url(#cmir)"><g transform="translate(390 584) scale(.5)">${athleteBody(av, 'gshirt')}</g>
-        <polygon points="352,436 382,436 352,500" fill="rgba(255,255,255,.14)"/><polygon points="428,520 428,560 396,588 410,588" fill="rgba(255,255,255,.08)"/></g>
-      <rect x="338" y="402" width="104" height="22" rx="8" fill="#0b2431" stroke="#5ff2d0" stroke-width="2"/>
-      <text class="sgn" x="390" y="418" text-anchor="middle" fill="#5ff2d0" style="font-size:14px;letter-spacing:3px">MIROIR</text>
+      <clipPath id="cmir"><rect x="814" y="198" width="92" height="174" rx="44"/></clipPath>
+      <rect x="802" y="186" width="116" height="198" rx="56" fill="#6b4a30" stroke="#3a281a" stroke-width="3"/>
+      <rect x="814" y="198" width="92" height="174" rx="44" fill="url(#gmirror)"/>
+      <g clip-path="url(#cmir)"><g transform="translate(860 366) scale(.55)">${athleteBody(av, 'gshirt')}</g>
+        <polygon points="814,198 850,198 814,270" fill="rgba(255,255,255,.14)"/><polygon points="906,300 906,340 872,372 890,372" fill="rgba(255,255,255,.08)"/></g>
+      <rect x="806" y="156" width="108" height="22" rx="8" fill="#0b2431" stroke="#5ff2d0" stroke-width="2"/>
+      <text class="sgn" x="860" y="172" text-anchor="middle" fill="#5ff2d0" style="font-size:14px;letter-spacing:3px">MIROIR</text>
     </g>
-    <rect class="hl" x="326" y="396" width="128" height="244" rx="14"/>
-    <g class="tag"><rect x="322" y="604" width="136" height="26" rx="13"/><text x="390" y="622" text-anchor="middle">Miroir · garde-robe</text></g>
+    <rect class="hl" x="790" y="150" width="140" height="246" rx="14"/>
+    <g class="tag"><rect x="792" y="400" width="136" height="26" rx="13"/><text x="860" y="418" text-anchor="middle">Miroir · garde-robe</text></g>
   </g>
 
   <!-- athlète -->
