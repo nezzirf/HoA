@@ -574,7 +574,7 @@ body:not(.hubmode) #stage{width:100%; max-width:1240px; margin-inline:auto}
 :root[data-theme="light"] body{background-image:radial-gradient(900px 520px at 88% -8%, rgba(78,166,255,.22), transparent 60%),radial-gradient(760px 520px at -6% 18%, rgba(180,140,255,.16), transparent 60%),radial-gradient(700px 400px at 50% 110%, rgba(95,242,208,.14), transparent 60%)}
 :root[data-theme="light"] .toast{box-shadow:0 12px 40px -14px rgba(20,40,90,.35)}
 .setov{position:fixed; inset:0; z-index:80; background:rgba(4,8,16,.6); display:grid; place-items:center; padding:16px; backdrop-filter:blur(4px)}
-.setp{width:min(440px,100%); max-height:calc(100dvh - 32px); overflow:auto; padding:20px; display:flex; flex-direction:column; gap:16px; background:var(--card-solid); border:1px solid var(--line-2); border-radius:18px; box-shadow:0 30px 80px -20px rgba(0,0,0,.6)}
+.setp{width:min(480px,100%); max-height:calc(100dvh - 32px); overflow:auto; padding:20px; display:flex; flex-direction:column; gap:16px; background:var(--card-solid); border:1px solid var(--line-2); border-radius:18px; box-shadow:0 30px 80px -20px rgba(0,0,0,.6)}
 .setp h2{margin:0; font:800 italic 28px/1 var(--f-display); text-transform:uppercase; letter-spacing:.03em}
 .setrow{display:flex; flex-direction:column; gap:8px}
 .setrow>.label{margin:0}
@@ -587,13 +587,21 @@ body:not(.hubmode) #stage{width:100%; max-width:1240px; margin-inline:auto}
 .volrow{display:flex; align-items:center; gap:12px}
 .volrow output{font:700 13px var(--f-mono); color:var(--muted); min-width:42px; text-align:right}
 .btn.danger{--c:var(--bad)}
+#avStyle{display:grid; grid-template-columns:repeat(3,1fr)}
+.avwrap{display:flex; gap:14px; align-items:center}
+.avwrap svg{flex:none; background:color-mix(in srgb,var(--accent) 7%,transparent); border:1px solid var(--line); border-radius:14px}
+.avopts{display:flex; flex-direction:column; gap:7px; flex:1; min-width:0}
+.swrow{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
+.swrow small{width:56px; font-size:11px; color:var(--muted); font-weight:700}
+.sw{width:24px; height:24px; border-radius:50%; border:2px solid var(--line-2); cursor:pointer; padding:0}
+.sw[aria-pressed="true"]{border-color:var(--fg); box-shadow:0 0 0 2px var(--accent)}
 </style>
 
 <div class="shell" id="app">
   <header class="topbar">
     <div class="brand">
       <div class="logo"><svg class="i" viewBox="0 0 24 24" style="width:24px;height:24px;stroke-width:2.4"><path d="M6 7v10M3 9.5v5M18 7v10M21 9.5v5M6 12h12"/></svg></div>
-      <div><b>HALL OF <span>ATHLÈTE</span></b><small>Performance Lab</small></div>
+      <div><b>HALL OF <span>ATHLÈTE</span></b></div>
     </div>
     <div class="hud">
       <button class="icon-btn" id="btnSound" data-act="mute" aria-label="Activer ou couper le son"></button>
@@ -698,7 +706,7 @@ const KEY = 'apex-athlete-v2';
 const defaults = () => ({
   perfect:{},
   daily:{ date:'', scores:[null, null, null, null, null], humans:[], cur:-1, streak:0, last:'', hist:[], result:null },
-  name:'Alex Moreau', muted:false, theme:'auto', vol:55, pts:0, items:{}, sessions:0,
+  name:'Alex Moreau', muted:false, theme:'auto', vol:55, avatar:{ skin:'#d9a98a', hair:'#1a1f2e', style:'bandeau', shirt:0, shorts:'#14203a', band:'#5ff2d0', plates:'#ff7a45' }, pts:0, items:{}, sessions:0,
   stats:{ force:0, speed:0, endurance:0, agility:0, precision:0, mental:0 }
 });
 function load() {
@@ -706,7 +714,7 @@ function load() {
   try {
     const raw = localStorage.getItem(KEY);
     if (raw) { const o = JSON.parse(raw);
-      return Object.assign(d, o, { stats:Object.assign(d.stats, o.stats), items:Object.assign({}, o.items) }); }
+      return Object.assign(d, o, { stats:Object.assign(d.stats, o.stats), items:Object.assign({}, o.items), avatar:Object.assign(d.avatar, o.avatar) }); }
   } catch (e) {}
   return d;
 }
@@ -810,9 +818,58 @@ function go(v) {
 let hubX = 560, hubBusy = false;           // position de l'athlète dans la salle
 const HUB_SPOTS = { shop:150, daily:865 };
 const STAT_HEX = { force:'#ff7a45', speed:'#4ea6ff', endurance:'#b48cff', agility:'#46e08a', precision:'#ff5fa8', mental:'#f2e35b' };
+/* ---------- personnage personnalisable ---------- */
+const SKINS = ['#f6d3b8', '#e8b998', '#d9a98a', '#b9805a', '#8a5a3b', '#5b3a26'];
+const HAIRS = ['#1a1f2e', '#4a2e1a', '#9a6a3a', '#e3c37a', '#c0392b', '#e9eefb'];
+const SHIRTS = [['#5ff2d0', '#4ea6ff'], ['#ff7a45', '#ffcc55'], ['#ff5fa8', '#b48cff'], ['#46e08a', '#2a9d6a'], ['#e9eefb', '#93a1bf'], ['#ff5470', '#a8203a'], ['#4ea6ff', '#2a4a9a']];
+const SHORTS = ['#14203a', '#1b1b22', '#7a1f2e', '#1f5a3a', '#4a3a8a', '#e9eefb'];
+const ACCENTS = ['#5ff2d0', '#ff7a45', '#ff5fa8', '#ffcc55', '#4ea6ff', '#e9eefb'];
+const PLATES = ['#ff7a45', '#4ea6ff', '#46e08a', '#ff5fa8', '#ffcc55', '#b48cff'];
+const STYLES = [['bandeau', 'Bandeau'], ['casquette', 'Casquette'], ['court', 'Courts'], ['long', 'Longs'], ['crete', 'Crête'], ['chauve', 'Chauve']];
+const AV_DEF = { skin:'#d9a98a', hair:'#1a1f2e', style:'bandeau', shirt:0, shorts:'#14203a', band:'#5ff2d0', plates:'#ff7a45' };
+const isCol = v => typeof v === 'string' && /^#[0-9a-f]{3,8}$/i.test(v);
+function avOf() {   // apparence validée (une valeur inconnue retombe sur la valeur par défaut)
+  const a = Object.assign({}, AV_DEF, S.avatar || {});
+  ['skin', 'hair', 'shorts', 'band', 'plates'].forEach(k => { if (!isCol(a[k])) a[k] = AV_DEF[k]; });
+  if (!STYLES.some(s => s[0] === a.style)) a.style = AV_DEF.style;
+  a.shirt = SHIRTS[a.shirt] ? a.shirt : 0;
+  return a;
+}
+function hairSVG(av) {
+  const h = av.hair, dome = `<path d="M-20 -176a20 20 0 0 1 40 0v2h-40z" fill="${h}"/>`;
+  return ({
+    bandeau:   dome + `<rect x="-20" y="-181" width="40" height="7" rx="3" fill="${av.band}"/>`,
+    casquette: `<path d="M-21 -173a21 21 0 0 1 42 0z" fill="${av.band}"/><rect x="6" y="-177" width="25" height="5" rx="2.5" fill="${av.band}"/><rect x="6" y="-174" width="25" height="2" fill="rgba(0,0,0,.25)"/>`,
+    court:     dome,
+    long:      dome + `<rect x="-25" y="-178" width="12" height="44" rx="6" fill="${h}"/>`,
+    crete:     `<polygon points="-8,-188 -5,-208 0,-193 5,-210 10,-193 15,-206 14,-186" fill="${h}"/>`,
+    chauve:    ''
+  })[av.style];
+}
+function athleteBody(av, gid) {
+  return `      <g transform="scale(1)">
+        <g>
+          <animateTransform attributeName="transform" type="translate" values="0 0;0 -2;0 0" dur="3s" repeatCount="indefinite"/>
+          <g><animateTransform class="wa" attributeName="transform" type="rotate" values="0 -9 -78;24 -9 -78;0 -9 -78;-24 -9 -78;0 -9 -78" dur=".55s" begin="indefinite" repeatCount="indefinite"/>
+            <rect x="-17" y="-80" width="16" height="72" rx="7" fill="#1d2b47"/><rect x="-23" y="-13" width="27" height="13" rx="6" fill="#eaf7ff"/><rect x="-23" y="-4" width="27" height="4" rx="2" fill="${av.band}"/></g>
+          <g><animateTransform class="wa" attributeName="transform" type="rotate" values="0 9 -78;-24 9 -78;0 9 -78;24 9 -78;0 9 -78" dur=".55s" begin="indefinite" repeatCount="indefinite"/>
+            <rect x="1" y="-80" width="16" height="72" rx="7" fill="#27375a"/><rect x="-3" y="-13" width="27" height="13" rx="6" fill="#eaf7ff"/><rect x="-3" y="-4" width="27" height="4" rx="2" fill="${av.band}"/></g>
+          <rect x="-34" y="-148" width="13" height="58" rx="6" fill="${av.skin}"/>
+          <rect x="-27" y="-152" width="54" height="80" rx="19" fill="url(#${gid})"/>
+          <rect x="-27" y="-94" width="54" height="28" rx="11" fill="${av.shorts}"/>
+          <g><rect x="21" y="-150" width="13" height="36" rx="6" fill="${av.skin}"/>
+            <g><animateTransform attributeName="transform" type="rotate" values="0 28 -116;-80 28 -116;0 28 -116" keyTimes="0;.5;1" calcMode="spline" keySplines=".4 0 .2 1;.4 0 .2 1" dur="2.6s" repeatCount="indefinite"/>
+              <rect x="21" y="-116" width="13" height="36" rx="6" fill="${av.skin}"/>
+              <rect x="13" y="-84" width="30" height="5" rx="2" fill="#aab6cf"/><rect x="9" y="-93" width="8" height="23" rx="3" fill="${av.plates}"/><rect x="39" y="-93" width="8" height="23" rx="3" fill="${av.plates}"/></g></g>
+          <circle cx="0" cy="-172" r="20" fill="${av.skin}"/>
+          ${hairSVG(av)}
+          <circle cx="8" cy="-168" r="2.2" fill="#1a1f2e"/>
+        </g>
+      </g>`;
+}
 function gymSVG(nAff) {
   const d = new Date(), hA = (d.getHours() % 12 + d.getMinutes() / 60) * 30, mA = d.getMinutes() * 6;
-  const o = overall(), nm = S.name.replace(/[<>&"]/g, '').toUpperCase();
+  const av = avOf(), o = overall(), nm = S.name.replace(/[<>&"]/g, '').toUpperCase();
   const dd = dailyState(), dN = dd.scores.filter(x => x != null).length, dDone = dN === DAILY.length, dTot = dd.scores.reduce((a, b) => a + (b || 0), 0);
   const dSq = dd.scores.map((v, i) => `<rect x="${758 + i * 36}" y="410" width="28" height="10" rx="3" fill="${v == null ? (i === dN ? '#5ff2d0' : 'rgba(255,255,255,.12)') : v >= 80 ? '#46e08a' : v >= 50 ? '#ffcc55' : v >= 25 ? '#ff7a45' : '#ff5470'}" ${v == null && i === dN ? 'class="glowpulse"' : ''}/>`).join('');
   /* --- tableau des stats (mur) --- */
@@ -857,7 +914,7 @@ function gymSVG(nAff) {
     <linearGradient id="gmirror" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1d2c4f"/><stop offset="1" stop-color="#0f1a33"/></linearGradient>
     <linearGradient id="glocker" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#34598a"/><stop offset="1" stop-color="#1f3a63"/></linearGradient>
     <linearGradient id="gout" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fc4ff"/><stop offset=".55" stop-color="#d9efff"/><stop offset="1" stop-color="#f4fbff"/></linearGradient>
-    <linearGradient id="gshirt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5ff2d0"/><stop offset="1" stop-color="#4ea6ff"/></linearGradient>
+    <linearGradient id="gshirt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${SHIRTS[av.shirt][0]}"/><stop offset="1" stop-color="${SHIRTS[av.shirt][1]}"/></linearGradient>
     <linearGradient id="gspill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9efff" stop-opacity=".45"/><stop offset="1" stop-color="#d9efff" stop-opacity="0"/></linearGradient>
     <linearGradient id="gtv" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10234a"/><stop offset="1" stop-color="#0a1633"/></linearGradient>
     <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
@@ -874,7 +931,6 @@ function gymSVG(nAff) {
 
   <!-- enseigne néon + horloge -->
   <text class="neon" x="620" y="84" text-anchor="middle" filter="url(#glow)" style="font-size:38px;letter-spacing:4px">HALL OF ATHLÈTE</text>
-  <text x="600" y="108" text-anchor="middle" font-size="11" letter-spacing="8" fill="#7f93b8" font-weight="700">PERFORMANCE LAB</text>
   <g transform="translate(396 64)"><circle r="24" fill="#0d1527" stroke="#2c3d63" stroke-width="3"/><g stroke="#7f93b8" stroke-width="2">${[0, 90, 180, 270].map(a => `<path d="M0 -19V-15" transform="rotate(${a})"/>`).join('')}</g>
     <path d="M0 0V-12" stroke="#e9eefb" stroke-width="3" stroke-linecap="round" transform="rotate(${hA})"/><path d="M0 0V-17" stroke="#5ff2d0" stroke-width="2" stroke-linecap="round" transform="rotate(${mA})"/></g>
 
@@ -950,25 +1006,7 @@ function gymSVG(nAff) {
   <g id="ath" style="transform:translate(${hubX}px,592px)">
     <g id="athFlip" transform="scale(1 1)">
       <ellipse cx="0" cy="4" rx="42" ry="8" fill="#000" opacity=".4"/>
-      <g transform="scale(1)">
-        <g>
-          <animateTransform attributeName="transform" type="translate" values="0 0;0 -2;0 0" dur="3s" repeatCount="indefinite"/>
-          <g><animateTransform class="wa" attributeName="transform" type="rotate" values="0 -9 -78;24 -9 -78;0 -9 -78;-24 -9 -78;0 -9 -78" dur=".55s" begin="indefinite" repeatCount="indefinite"/>
-            <rect x="-17" y="-80" width="16" height="72" rx="7" fill="#1d2b47"/><rect x="-23" y="-13" width="27" height="13" rx="6" fill="#eaf7ff"/><rect x="-23" y="-4" width="27" height="4" rx="2" fill="#5ff2d0"/></g>
-          <g><animateTransform class="wa" attributeName="transform" type="rotate" values="0 9 -78;-24 9 -78;0 9 -78;24 9 -78;0 9 -78" dur=".55s" begin="indefinite" repeatCount="indefinite"/>
-            <rect x="1" y="-80" width="16" height="72" rx="7" fill="#27375a"/><rect x="-3" y="-13" width="27" height="13" rx="6" fill="#eaf7ff"/><rect x="-3" y="-4" width="27" height="4" rx="2" fill="#5ff2d0"/></g>
-          <rect x="-34" y="-148" width="13" height="58" rx="6" fill="#d9a98a"/>
-          <rect x="-27" y="-152" width="54" height="80" rx="19" fill="url(#gshirt)"/>
-          <rect x="-27" y="-94" width="54" height="28" rx="11" fill="#14203a"/>
-          <g><rect x="21" y="-150" width="13" height="36" rx="6" fill="#d9a98a"/>
-            <g><animateTransform id="curlA" attributeName="transform" type="rotate" values="0 28 -116;-80 28 -116;0 28 -116" keyTimes="0;.5;1" calcMode="spline" keySplines=".4 0 .2 1;.4 0 .2 1" dur="2.6s" repeatCount="indefinite"/>
-              <rect x="21" y="-116" width="13" height="36" rx="6" fill="#d9a98a"/>
-              <rect x="13" y="-84" width="30" height="5" rx="2" fill="#aab6cf"/><rect x="9" y="-93" width="8" height="23" rx="3" fill="#ff7a45"/><rect x="39" y="-93" width="8" height="23" rx="3" fill="#ff7a45"/></g></g>
-          <circle cx="0" cy="-172" r="20" fill="#d9a98a"/>
-          <path d="M-20 -176a20 20 0 0 1 40 0v2h-40z" fill="#1a1f2e"/><rect x="-20" y="-181" width="40" height="7" rx="3" fill="#5ff2d0"/>
-          <circle cx="8" cy="-168" r="2.2" fill="#1a1f2e"/>
-        </g>
-      </g>
+${athleteBody(av, 'gshirt')}
     </g>
     <text x="0" y="34" text-anchor="middle" class="ntag">${nm}</text>
   </g>
@@ -1401,6 +1439,18 @@ function openSettings() {
   o.innerHTML = `<div class="setp" role="dialog" aria-modal="true" aria-label="Options">
     <h2>Options</h2>
     <div class="setrow"><span class="label">Pseudo</span><input type="text" id="setName" maxlength="22" spellcheck="false" aria-label="Pseudo de l'athlète"></div>
+    <div class="setrow"><span class="label">Personnage</span>
+      <div class="avwrap"><svg id="avPrev" viewBox="-62 -232 124 262" width="104" aria-label="Aperçu du personnage"></svg>
+        <div class="avopts">
+          <div class="swrow" data-k="skin"><small>Peau</small>${SKINS.map(c => `<button type="button" class="sw" data-v="${c}" style="background:${c}" aria-label="Peau ${c}"></button>`).join('')}</div>
+          <div class="swrow" data-k="hair"><small>Cheveux</small>${HAIRS.map(c => `<button type="button" class="sw" data-v="${c}" style="background:${c}" aria-label="Cheveux ${c}"></button>`).join('')}</div>
+          <div class="swrow" data-k="shirt"><small>Maillot</small>${SHIRTS.map((c, i) => `<button type="button" class="sw" data-v="${i}" style="background:linear-gradient(135deg,${c[0]},${c[1]})" aria-label="Maillot ${i + 1}"></button>`).join('')}</div>
+          <div class="swrow" data-k="shorts"><small>Short</small>${SHORTS.map(c => `<button type="button" class="sw" data-v="${c}" style="background:${c}" aria-label="Short ${c}"></button>`).join('')}</div>
+          <div class="swrow" data-k="band"><small>Accent</small>${ACCENTS.map(c => `<button type="button" class="sw" data-v="${c}" style="background:${c}" aria-label="Accent ${c}"></button>`).join('')}</div>
+          <div class="swrow" data-k="plates"><small>Haltère</small>${PLATES.map(c => `<button type="button" class="sw" data-v="${c}" style="background:${c}" aria-label="Haltère ${c}"></button>`).join('')}</div>
+        </div></div>
+      <div class="seg" id="avStyle">${STYLES.map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="false">${l}</button>`).join('')}</div>
+      <button class="btn ghost" id="avRand" type="button">Aléatoire</button></div>
     <div class="setrow"><span class="label">Son</span>
       <div class="seg" id="setSound"><button type="button" data-v="on" aria-pressed="${!S.muted}">Activé</button><button type="button" data-v="off" aria-pressed="${!!S.muted}">Coupé</button></div>
       <div class="volrow"><input type="range" id="setVol" min="0" max="100" step="5" aria-label="Volume"><output id="setVolOut"></output></div></div>
@@ -1417,6 +1467,17 @@ function openSettings() {
   seg('setSound', v => { S.muted = v === 'off'; updateHud(); save(); if (!S.muted) { Sfx.init(); Sfx.ok(); } });
   seg('setTheme', v => { S.theme = v; applyTheme(); save(); });
   o.addEventListener('mousedown', e => { if (e.target === o) closeSettings(); });
+  const avRender = () => {
+    const av = avOf();
+    $('#avPrev').innerHTML = `<defs><linearGradient id="gshirtP" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${SHIRTS[av.shirt][0]}"/><stop offset="1" stop-color="${SHIRTS[av.shirt][1]}"/></linearGradient></defs><ellipse cx="0" cy="4" rx="42" ry="8" fill="#000" opacity=".35"/>${athleteBody(av, 'gshirtP')}`;
+    o.querySelectorAll('.swrow').forEach(r => r.querySelectorAll('.sw').forEach(b => b.setAttribute('aria-pressed', String(av[r.dataset.k]) === b.dataset.v)));
+    $('#avStyle').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === av.style));
+  }, avSet = patch => { S.avatar = Object.assign(avOf(), patch); save(); avRender(); if (view === 'hub') { clearTimeout(refreshT); refreshT = setTimeout(viewHub, 250); } };
+  o.querySelectorAll('.swrow').forEach(r => r.addEventListener('click', e => { const b = e.target.closest('.sw'); if (b) avSet({ [r.dataset.k]: r.dataset.k === 'shirt' ? +b.dataset.v : b.dataset.v }); }));
+  $('#avStyle').addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (b) avSet({ style:b.dataset.v }); });
+  const rp = a => a[Math.floor(Math.random() * a.length)];
+  $('#avRand').addEventListener('click', () => avSet({ skin:rp(SKINS), hair:rp(HAIRS), shirt:Math.floor(Math.random() * SHIRTS.length), shorts:rp(SHORTS), band:rp(ACCENTS), plates:rp(PLATES), style:rp(STYLES)[0] }));
+  avRender();
   name.focus();
 }
 document.addEventListener('keydown', e => { // les éléments de la salle se pilotent aussi au clavier
