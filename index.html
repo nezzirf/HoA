@@ -1259,7 +1259,7 @@ async function gTuiles(el, rnd, variant) {
   const life = k => (joker ? 1.05 : 1.3) - (joker ? .35 : .5) * (k / (N - 1));       // durée d'une tuile : de plus en plus courte
   el.innerHTML = `<div class="dgame"><div class="count-big"><b id="tT">0,0</b><small>SECONDES · TUILE <span id="tI">1</span>/${N}</small></div>
     <div class="tgrid" id="tg" style="--cols:${cols}">${Array.from({ length:nT }, (_, i) => `<button type="button" class="tile" data-i="${i}" aria-label="Tuile ${i + 1}"></button>`).join('')}</div>
-    <div class="dsub">Touche la tuile <b style="color:var(--speed)">bleue</b>. Une tuile <b style="color:var(--bad)">rouge</b> est un piège (+1 s). Une tuile qui s'éteint coûte 0,8 s, une erreur 0,6 s.</div></div>`;
+    <div class="dsub">Touche la tuile <b style="color:var(--speed)">bleue</b>. Une tuile <b style="color:var(--bad)">rouge</b> est un piège (+0,5 s). Une tuile qui s'éteint coûte 0,8 s, un clic à côté 0,25 s.</div></div>`;
   const tiles = [...el.querySelectorAll('.tile')], tT = $('#tT'), tI = $('#tI'); let i = 0, pen = 0, errs = 0, good = 0, t0 = 0, exp = null, done;
   D.dbg = { lit:() => seq[i], decoy:() => dec[i] };
   const light = () => {
@@ -1270,7 +1270,7 @@ async function gTuiles(el, rnd, variant) {
   await new Promise((res, rej) => { const d = D; done = () => D === d ? res() : rej(ABORT);
     dOn($('#tg'), 'pointerdown', e => { const b = e.target.closest('.tile'); if (!b) return; e.preventDefault(); const idx = +b.dataset.i;
       if (idx === seq[i]) { good++; Sfx.step(i % 2); i++; if (i >= N) return done(); light(); }
-      else { const trap = idx === dec[i]; pen += trap ? 1 : .6; errs++; b.classList.add('bad'); setTimeout(() => b.classList.remove('bad'), 200); Sfx.bad(); } });
+      else { const trap = idx === dec[i]; pen += trap ? .5 : .25; errs++; b.classList.add('bad'); setTimeout(() => b.classList.remove('bad'), 200); Sfx.bad(); } });
     t0 = performance.now(); light();
     const tick = () => { if (D !== d) return rej(ABORT); tT.textContent = f1((performance.now() - t0) / 1000 + pen); d.raf = requestAnimationFrame(tick); }; tick();
     D.tm.push(setTimeout(() => D === d ? res() : rej(ABORT), 60000)); });
@@ -1524,7 +1524,7 @@ function openSettings() {
       <div class="volrow"><input type="range" id="setVol" min="0" max="100" step="5" aria-label="Volume"><output id="setVolOut"></output></div></div>
     <div class="setrow"><span class="label">Thème</span><div class="seg" id="setTheme">${THEMES.map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="${(S.theme || 'auto') === v}">${l}</button>`).join('')}</div></div>
     <div class="setrow"><span class="label">Partie</span><button class="btn ghost danger" id="btnReset" data-act="reset" type="button">Réinitialiser la partie</button></div>
-    <div class="btnrow"><button class="btn" data-act="closeset" type="button">Fermer</button></div><small style="color:var(--dim);text-align:center">Version 51 · vestiaire centré</small></div>`;
+    <div class="btnrow"><button class="btn" data-act="closeset" type="button">Fermer</button></div><small style="color:var(--dim);text-align:center">Version 52 · tuiles moins punitives</small></div>`;
   document.body.appendChild(o);
   const name = $('#setName'), vol = $('#setVol'), out = $('#setVolOut');
   name.value = S.name; vol.value = S.vol == null ? 55 : S.vol; out.textContent = vol.value + ' %';
