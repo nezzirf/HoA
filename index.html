@@ -581,12 +581,15 @@ body:not(.hubmode) #stage{width:100%; max-width:1240px; margin-inline:auto}
 .seg{display:flex; gap:6px; flex-wrap:wrap}
 .seg button{flex:1; min-width:84px; padding:9px 12px; border-radius:10px; border:1px solid var(--line-2); background:transparent; color:var(--muted); font:700 13px var(--f-body); cursor:pointer}
 .seg button[aria-pressed="true"]{color:var(--fg); border-color:var(--accent); background:color-mix(in srgb,var(--accent) 16%,transparent)}
-.setp input[type=text]{width:100%; box-sizing:border-box; padding:10px 12px; border-radius:10px; border:1px solid var(--line-2); background:transparent; color:var(--fg); font:600 15px var(--f-body)}
-.setp input[type=text]:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+.setp input[type=text],.setp input[type=email],.setp input[type=password]{width:100%; box-sizing:border-box; padding:10px 12px; border-radius:10px; border:1px solid var(--line-2); background:transparent; color:var(--fg); font:600 15px var(--f-body)}
+.setp input:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
 .setp input[type=range]{width:100%; accent-color:var(--accent)}
 .volrow{display:flex; align-items:center; gap:12px}
 .volrow output{font:700 13px var(--f-mono); color:var(--muted); min-width:42px; text-align:right}
 .btn.danger{--c:var(--bad)}
+.acmsg{font-size:12.5px; color:var(--muted)}
+.acbox{display:flex; flex-direction:column; gap:2px}
+.acbox b{font-size:14px; word-break:break-all}
 #avStyle{display:grid; grid-template-columns:repeat(4,1fr)}
 .cards.acc{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
 .accprev svg{display:block; height:150px; width:auto; margin:0 auto}
@@ -718,18 +721,24 @@ const defaults = () => ({
   name:'Alex Moreau', muted:false, theme:'auto', vol:55, avatar:{ skin:'#d9a98a', hair:'#1a1f2e', style:'court', shirt:0, shorts:'#14203a', band:'#5ff2d0', plates:'#ff7a45', equip:[] }, pts:0, items:{}, sessions:0,
   stats:{ force:0, speed:0, endurance:0, agility:0, precision:0, mental:0 }
 });
+function hydrate(o) {   // complète une sauvegarde (locale ou en ligne) avec les valeurs par défaut
+  const d = defaults(); o = o && typeof o === 'object' ? o : {};
+  const s = Object.assign(d, o, { stats:Object.assign(d.stats, o.stats), items:Object.assign({}, o.items), avatar:Object.assign(d.avatar, o.avatar), daily:Object.assign(d.daily, o.daily) });
+  STAT_KEYS.forEach(k => { s.stats[k] = clamp(+s.stats[k] || 0, 0, 100); });
+  return s;
+}
 function load() {
-  const d = defaults();
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) { const o = JSON.parse(raw);
-      return Object.assign(d, o, { stats:Object.assign(d.stats, o.stats), items:Object.assign({}, o.items), avatar:Object.assign(d.avatar, o.avatar) }); }
-  } catch (e) {}
-  return d;
+  try { const raw = localStorage.getItem(KEY); if (raw) return hydrate(JSON.parse(raw)); } catch (e) {}
+  return hydrate(null);
 }
 let S = load();
-STAT_KEYS.forEach(k => { S.stats[k] = Math.min(100, S.stats[k]); });
-function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+const snap = () => { const o = Object.assign({}, S); delete o.t; return JSON.stringify(o); };   // contenu de la partie, sans l'horodatage
+let lastSnap = snap();
+function save() {
+  const s = snap(); if (s !== lastSnap) { lastSnap = s; S.t = Date.now(); }   // S.t : date de la dernière modification (sert à la synchro)
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
+  cloudQueue();
+}
 
 /* ---------- calculs ---------- */
 const overall = () => STAT_KEYS.reduce((a, k) => a + S.stats[k], 0) / STAT_KEYS.length;
@@ -1491,6 +1500,121 @@ function toast(msg, kind = 'ok') {
 }
 let resetArmed = false, resetT = 0;
 function disarm() { resetArmed = false; const b = $('#btnReset'); if (b) { b.classList.remove('armed'); b.textContent = 'Réinitialiser la partie'; } }
+/* =====================================================================
+   COMPTE EN LIGNE (Supabase) : connexion par e-mail, sauvegarde synchronisée entre appareils.
+   Sans connexion, le jeu fonctionne comme avant avec la sauvegarde locale.
+   ===================================================================== */
+const SB_URL = 'https://ohlcpsgyhlfpizecaxqt.supabase.co', SB_KEY = 'sb_publishable_3GN3eWXHq45bPTh6GNhUUQ_KEKFPq_b', AKEY = 'hoa-auth';
+let AUTH = null; try { AUTH = JSON.parse(localStorage.getItem(AKEY)); } catch (e) {}
+if (!AUTH || !AUTH.access_token || !AUTH.user) AUTH = null;
+let cloudReady = false, cloudLast = '', cloudT = 0, cloudBusy = false, cloudMsg = '', cloudConflict = null;
+const authStore = () => { try { AUTH ? localStorage.setItem(AKEY, JSON.stringify(AUTH)) : localStorage.removeItem(AKEY); } catch (e) {} };
+const esc = s => String(s).replace(/[<>&"]/g, c => ({ '<':'&lt;', '>':'&gt;', '&':'&amp;', '"':'&quot;' }[c]));
+const SB_ERR = [[/invalid login credentials/i, 'E-mail ou mot de passe incorrect.'], [/already registered|already been registered/i, 'Un compte existe déjà avec cet e-mail.'],
+  [/email not confirmed/i, 'Confirme d\'abord ton e-mail (lien reçu par e-mail), puis connecte-toi.'], [/at least 6 characters|password should/i, 'Mot de passe trop court (6 caractères minimum).'],
+  [/valid email|invalid format|invalid email/i, 'Adresse e-mail invalide.'], [/rate limit|too many/i, 'Trop de tentatives : réessaie dans quelques minutes.'],
+  [/could not find the table|PGRST205|relation .* does not exist/i, 'La table de sauvegarde n\'existe pas encore dans Supabase.'], [/failed to fetch|networkerror|load failed/i, 'Connexion impossible : vérifie ta connexion Internet.']];
+const sbErr = e => { const m = String((e && e.message) || e); const f = SB_ERR.find(x => x[0].test(m)); return f ? f[1] : m; };
+async function sb(path, opt = {}, asUser) {
+  const headers = Object.assign({ apikey:SB_KEY, 'Content-Type':'application/json' }, opt.headers);
+  if (asUser) { await authFresh(); headers.Authorization = 'Bearer ' + AUTH.access_token; }
+  const r = await fetch(SB_URL + path, Object.assign({}, opt, { headers })), txt = await r.text(); let j = null; try { j = txt ? JSON.parse(txt) : null; } catch (e) {}
+  if (!r.ok) throw Object.assign(new Error((j && (j.msg || j.message || j.error_description || j.error)) || 'Erreur ' + r.status), { status:r.status });
+  return j;
+}
+function setSession(j) { AUTH = { access_token:j.access_token, refresh_token:j.refresh_token, expires_at:Date.now() + (j.expires_in || 3600) * 1000, user:{ id:j.user.id, email:j.user.email } }; authStore(); }
+async function authFresh() {
+  if (!AUTH) throw new Error('Non connecté.');
+  if (AUTH.expires_at - Date.now() > 60000) return;
+  try { setSession(await sb('/auth/v1/token?grant_type=refresh_token', { method:'POST', body:JSON.stringify({ refresh_token:AUTH.refresh_token }) })); }
+  catch (e) { if (e.status >= 400 && e.status < 500) { AUTH = null; authStore(); cloudMsg = 'Session expirée : reconnecte-toi.'; acctRender(); } throw e; }
+}
+const hasProgress = s => STAT_KEYS.some(k => s.stats[k] > 0) || (s.pts || 0) > 0 || (s.sessions || 0) > 0 || (s.daily && s.daily.scores || []).some(x => x != null);
+const avgOf = s => { const st = (s && s.stats) || {}; return STAT_KEYS.reduce((a, k) => a + (+st[k] || 0), 0) / STAT_KEYS.length; };
+const hhmm = () => new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+function adopt(R) {   // remplace la partie locale par celle du compte (les réglages de l'appareil sont conservés)
+  const keep = { theme:S.theme, muted:S.muted, vol:S.vol };
+  dClean(); PRACT = null;
+  S = hydrate(R); Object.assign(S, keep); S.uid = AUTH.user.id;
+  lastSnap = snap(); cloudLast = lastSnap;
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
+  applyTheme(); updateHud(); go('hub');
+}
+async function cloudPush(force) {
+  if (!AUTH || !cloudReady || cloudBusy) return;
+  if (D) { cloudQueue(); return; }                      // jamais en pleine épreuve
+  S.uid = AUTH.user.id; const s = snap(); if (!force && s === cloudLast) return;
+  if (s !== lastSnap) { lastSnap = s; S.t = Date.now(); } if (!S.t) S.t = Date.now();
+  cloudBusy = true;
+  try {
+    await sb('/rest/v1/saves?on_conflict=user_id', { method:'POST', headers:{ Prefer:'resolution=merge-duplicates,return=minimal' }, body:JSON.stringify({ user_id:AUTH.user.id, data:S, updated_at:new Date().toISOString() }) }, true);
+    cloudLast = s; cloudMsg = 'Sauvegarde en ligne à jour · ' + hhmm();
+  } catch (e) { cloudMsg = sbErr(e); }
+  cloudBusy = false; acctRender();
+}
+function cloudQueue() { if (!AUTH || !cloudReady) return; clearTimeout(cloudT); cloudT = setTimeout(() => cloudPush(), 2500); }
+async function cloudSync(fromLogin) {   // récupère la partie du compte et garde la plus récente
+  if (!AUTH || cloudBusy) return;
+  cloudBusy = true; let row = null;
+  try { const rows = await sb('/rest/v1/saves?select=data&user_id=eq.' + AUTH.user.id, {}, true); row = rows && rows[0]; }
+  catch (e) { cloudBusy = false; cloudMsg = sbErr(e); acctRender(); return; }
+  cloudBusy = false;
+  const R = row && row.data;
+  if (!R) { cloudReady = true; await cloudPush(true); return; }                      // compte vide : on y envoie cette partie
+  if (S.uid === AUTH.user.id) {                                                    // appareil déjà lié : la plus récente gagne
+    cloudReady = true;
+    if ((R.t || 0) > (S.t || 0)) { if (!D) { adopt(R); cloudMsg = 'Partie récupérée depuis ton compte · ' + hhmm(); if (!fromLogin) toast('Partie mise à jour depuis ton compte.'); } }
+    else await cloudPush();
+  } else if (!hasProgress(S)) { cloudReady = true; adopt(R); cloudMsg = 'Partie récupérée depuis ton compte · ' + hhmm(); toast('Partie récupérée depuis ton compte.'); }
+  else { cloudConflict = R; cloudMsg = ''; }                                         // deux parties différentes : au joueur de choisir
+  acctRender();
+}
+async function acctLogin(email, pw, create) {
+  cloudMsg = create ? 'Création du compte…' : 'Connexion…'; acctRender(true);
+  try {
+    const j = await sb(create ? '/auth/v1/signup' : '/auth/v1/token?grant_type=password', { method:'POST', body:JSON.stringify({ email, password:pw }) });
+    if (!j || !j.access_token) { cloudMsg = 'Compte créé. Clique sur le lien reçu par e-mail pour le confirmer, puis connecte-toi ici.'; acctRender(true); return; }
+    setSession(j); cloudReady = false; cloudConflict = null; cloudMsg = 'Synchronisation…'; acctRender();
+    await cloudSync(true);
+  } catch (e) { cloudMsg = sbErr(e); acctRender(!AUTH); }
+}
+function acctResolve(useCloud) {
+  const R = cloudConflict; cloudConflict = null; cloudReady = true;
+  if (useCloud) { adopt(R); cloudMsg = 'Partie du compte chargée · ' + hhmm(); acctRender(); }
+  else { S.uid = AUTH.user.id; cloudPush(true); }
+}
+function acctLogout() {
+  const tok = AUTH && AUTH.access_token; clearTimeout(cloudT);
+  if (tok) fetch(SB_URL + '/auth/v1/logout', { method:'POST', headers:{ apikey:SB_KEY, Authorization:'Bearer ' + tok } }).catch(() => {});
+  AUTH = null; authStore(); cloudReady = false; cloudConflict = null; cloudLast = ''; cloudMsg = 'Déconnecté. Ta partie reste sur cet appareil.'; acctRender();
+}
+function acctHTML() {
+  if (!AUTH) return `<span class="label">Compte · sauvegarde en ligne</span>
+    <input type="email" id="acEmail" placeholder="E-mail" autocomplete="email" aria-label="E-mail">
+    <input type="password" id="acPw" placeholder="Mot de passe (6 caractères min.)" autocomplete="current-password" aria-label="Mot de passe">
+    <div class="seg"><button type="button" id="acIn">Se connecter</button><button type="button" id="acUp">Créer un compte</button></div>
+    <small class="acmsg" id="acMsg">${esc(cloudMsg || 'Connecte-toi pour retrouver ta partie sur tous tes appareils.')}</small>`;
+  if (cloudConflict) return `<span class="label">Compte · ${esc(AUTH.user.email)}</span>
+    <small class="acmsg">Ce compte a déjà une partie en ligne, différente de celle de cet appareil. Laquelle veux-tu garder ? L'autre sera remplacée.</small>
+    <div class="seg"><button type="button" id="acCloud">Celle du compte (moyenne ${f1(avgOf(cloudConflict))})</button><button type="button" id="acLocal">Celle de cet appareil (moyenne ${f1(overall())})</button></div>`;
+  return `<span class="label">Compte · sauvegarde en ligne</span>
+    <div class="acbox"><b>${esc(AUTH.user.email)}</b><small class="acmsg" id="acMsg">${esc(cloudMsg || 'Connecté.')}</small></div>
+    <div class="seg"><button type="button" id="acSync">Synchroniser</button><button type="button" id="acOut">Se déconnecter</button></div>`;
+}
+function acctRender(keepFields) {
+  const box = $('#acct'); if (!box) return;
+  if (keepFields && $('#acMsg')) { $('#acMsg').textContent = cloudMsg; return; }
+  box.innerHTML = acctHTML();
+  const go2 = create => { const em = $('#acEmail').value.trim(), pw = $('#acPw').value; if (!em || !pw) { cloudMsg = 'Entre ton e-mail et ton mot de passe.'; acctRender(true); return; } acctLogin(em, pw, create); };
+  if ($('#acIn')) { $('#acIn').onclick = () => go2(false); $('#acUp').onclick = () => go2(true); $('#acPw').onkeydown = e => { if (e.key === 'Enter') go2(false); }; }
+  if ($('#acCloud')) { $('#acCloud').onclick = () => acctResolve(true); $('#acLocal').onclick = () => acctResolve(false); }
+  if ($('#acSync')) { $('#acSync').onclick = () => { cloudMsg = 'Synchronisation…'; acctRender(true); cloudSync(true); }; $('#acOut').onclick = acctLogout; }
+}
+function cloudStart() {
+  if (AUTH) cloudSync(false);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && AUTH && cloudReady && !D) cloudSync(false); });
+}
+
 /* ---------- options : son, pseudo, thème ---------- */
 const THEMES = [['auto', 'Comme mon appareil'], ['light', 'Clair'], ['dark', 'Sombre']];
 const darkMQ = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
@@ -1506,6 +1630,7 @@ function openSettings() {
   const o = document.createElement('div'); o.className = 'setov'; o.id = 'setov';
   o.innerHTML = `<div class="setp" role="dialog" aria-modal="true" aria-label="Options">
     <h2>Options</h2>
+    <div class="setrow" id="acct"></div>
     <div class="setrow"><span class="label">Pseudo</span><input type="text" id="setName" maxlength="22" spellcheck="false" aria-label="Pseudo de l'athlète"></div>
     <div class="setrow"><span class="label">Personnage · accessoires dans le vestiaire</span>
       <div class="avwrap"><svg id="avPrev" viewBox="-62 -232 124 262" width="104" aria-label="Aperçu du personnage"></svg>
@@ -1524,7 +1649,7 @@ function openSettings() {
       <div class="volrow"><input type="range" id="setVol" min="0" max="100" step="5" aria-label="Volume"><output id="setVolOut"></output></div></div>
     <div class="setrow"><span class="label">Thème</span><div class="seg" id="setTheme">${THEMES.map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="${(S.theme || 'auto') === v}">${l}</button>`).join('')}</div></div>
     <div class="setrow"><span class="label">Partie</span><button class="btn ghost danger" id="btnReset" data-act="reset" type="button">Réinitialiser la partie</button></div>
-    <div class="btnrow"><button class="btn" data-act="closeset" type="button">Fermer</button></div><small style="color:var(--dim);text-align:center">Version 52 · tuiles moins punitives</small></div>`;
+    <div class="btnrow"><button class="btn" data-act="closeset" type="button">Fermer</button></div><small style="color:var(--dim);text-align:center">Version 53 · compte en ligne</small></div>`;
   document.body.appendChild(o);
   const name = $('#setName'), vol = $('#setVol'), out = $('#setVolOut');
   name.value = S.name; vol.value = S.vol == null ? 55 : S.vol; out.textContent = vol.value + ' %';
@@ -1545,7 +1670,7 @@ function openSettings() {
   $('#avStyle').addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (b) avSet({ style:b.dataset.v }); });
   const rp = a => a[Math.floor(Math.random() * a.length)];
   $('#avRand').addEventListener('click', () => avSet({ skin:rp(SKINS), hair:rp(HAIRS), shirt:Math.floor(Math.random() * SHIRTS.length), shorts:rp(SHORTS), band:rp(ACCENTS), plates:rp(PLATES), style:rp(STYLES)[0] }));
-  avRender();
+  avRender(); acctRender();
   name.focus();
 }
 document.addEventListener('keydown', e => { // les éléments de la salle se pilotent aussi au clavier
@@ -1571,14 +1696,14 @@ document.addEventListener('click', e => {
   else if (a === 'mute') { S.muted = !S.muted; updateHud(); save(); if (!S.muted) Sfx.ok(); }
   else if (a === 'reset') {
     if (!resetArmed) { resetArmed = true; b.classList.add('armed'); b.textContent = 'Confirmer ?'; resetT = setTimeout(disarm, 3000); }
-    else { clearTimeout(resetT); try { localStorage.removeItem(KEY); } catch (er) {} S = defaults(); closeSettings(); applyTheme(); refreshAll(); go('hub'); toast('Nouvelle carrière lancée.'); }
+    else { clearTimeout(resetT); try { localStorage.removeItem(KEY); } catch (er) {} S = hydrate(null); if (AUTH) S.uid = AUTH.user.id; closeSettings(); applyTheme(); refreshAll(); go('hub'); toast('Nouvelle carrière lancée.'); }
   }
 });
 
 /* =====================================================================
    9. DÉMARRAGE
    ===================================================================== */
-applyTheme(); buildSide(); buildTabs(); updateHud(); updateSide(); go('hub');
+applyTheme(); buildSide(); buildTabs(); updateHud(); updateSide(); go('hub'); cloudStart();
 setInterval(() => { updateHud(); const dn = $('#dNext'); if (dn) dn.textContent = untilMidnight(); }, 1000);
 setInterval(save, 5000);
 window.addEventListener('beforeunload', save);
