@@ -42,3 +42,7 @@ update public.saves set data = data;   -- recalcule les sauvegardes déjà prés
 create or replace view public.leaderboard as
   select user_id, pseudo, moyenne, updated_at from public.saves;
 grant select on public.leaderboard to authenticated;
+
+-- le classement n'est visible que par les joueurs connectés (pas par n'importe qui avec la clé publique)
+revoke all on public.leaderboard from anon;
+grant select on public.leaderboard to authenticated;
