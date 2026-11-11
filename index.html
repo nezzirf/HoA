@@ -842,7 +842,7 @@ function go(v) {
 
 /* ---------- La salle de sport : hub plein écran, les stats vivent dans le décor ---------- */
 let hubX = 400, hubBusy = false;           // position de l'athlète dans la salle
-const HUB_SPOTS = { shop:176, daily:600, mirror:860, rank:870 };
+const HUB_SPOTS = { shop:176, daily:600, mirror:860, rank:176 };
 const STAT_HEX = { force:'#ff7a45', speed:'#4ea6ff', endurance:'#b48cff', agility:'#46e08a', precision:'#ff5fa8', mental:'#f2e35b' };
 /* ---------- personnage personnalisable ---------- */
 const SKINS = ['#f6d3b8', '#e8b998', '#d9a98a', '#b9805a', '#8a5a3b', '#5b3a26'];
@@ -935,11 +935,14 @@ function gymSVG(nAff) {
     if (!its) return `<g><rect x="${x}" y="210" width="50" height="190" rx="4" fill="url(#glocker)" stroke="#0c1626" stroke-width="2"/><path d="M${x + 11} 224h28M${x + 11} 231h28M${x + 11} 238h28" stroke="#0c1626" stroke-width="2.4" stroke-linecap="round"/><rect x="${x + 36}" y="290" width="5" height="22" rx="2" fill="#9db4d8"/><text x="${x + 25}" y="268" text-anchor="middle" font-size="12" font-weight="700" fill="rgba(255,255,255,.45)" font-family="JetBrains Mono,monospace">${i + 1}</text></g>`;
     return `<g><rect x="${x}" y="210" width="50" height="190" rx="4" fill="#0a1220" stroke="#0c1626" stroke-width="2"/>${PL.map(y => `<rect x="${x + 3}" y="${y}" width="44" height="5" rx="2" fill="#3f5a86"/>`).join('')}${its.map((id, k) => shelfItem(id, x, PL[k])).join('')}<polygon points="${x},210 ${x - 13},221 ${x - 13},389 ${x},400" fill="#2a4a78" stroke="#0c1626" stroke-width="2"/><path d="M${x - 9} 236h6M${x - 9} 242h6" stroke="#0c1626" stroke-width="2" stroke-linecap="round"/><rect x="${x - 10}" y="300" width="4" height="18" rx="2" fill="#9db4d8"/></g>`; }).join('');
   const sh = ITEM_BY.shoes, bench = `<g transform="translate(236 384)"><title>${sh.name} · ${STATS[sh.stat].label}</title>${itemSVG('shoes', 30)}${okIt(sh) ? '<circle cx="15" cy="-5" r="2.6" fill="#ffcc55"/>' : ''}</g>`;
-  const dg = dd.result ? dd.result.grade : null;
-  const poster = `<g aria-label="Barème des points"><path d="M120 12v12M230 12v12" stroke="#33466f" stroke-width="3"/>
-    <rect x="58" y="24" width="234" height="106" rx="10" fill="#0c1730" stroke="#33466f" stroke-width="3"/><rect x="66" y="32" width="218" height="90" rx="6" fill="none" stroke="rgba(95,242,208,.22)" stroke-width="1.5"/>
-    <text x="175" y="50" text-anchor="middle" class="bs">BARÈME DES POINTS</text><text x="175" y="63" text-anchor="middle" class="bs" style="font-size:8px;letter-spacing:.14em">SELON LA NOTE GLOBALE DU JOUR</text>
-    ${GRADES.map((g, i) => { const cx = 83 + i * 31.5; return `${g === dg ? `<rect x="${cx - 14}" y="68" width="28" height="48" rx="6" fill="none" stroke="${GRADE_COL[g]}" stroke-width="2"/>` : ''}<text x="${cx}" y="94" text-anchor="middle" style="font:800 italic 26px var(--f-display);fill:${GRADE_COL[g]}">${g}</text><text x="${cx}" y="110" text-anchor="middle" class="bv" style="font-size:9.5px">${fmtGain(POINTS[g])}</text>`; }).join('')}</g>`;
+  const poster = `<g class="hs" data-act="gym" data-to="rank" tabindex="0" role="button" aria-label="Classement des joueurs">
+    <g class="art"><path d="M120 12v12M230 12v12" stroke="#33466f" stroke-width="3"/>
+      <rect x="58" y="24" width="234" height="106" rx="10" fill="#0c1730" stroke="#33466f" stroke-width="3"/><rect x="66" y="32" width="218" height="90" rx="6" fill="none" stroke="rgba(255,204,85,.25)" stroke-width="1.5"/>
+      <text x="175" y="49" text-anchor="middle" class="bs" style="fill:#ffcc55">CLASSEMENT</text><text x="175" y="61" text-anchor="middle" class="bs" style="font-size:8px;letter-spacing:.14em">MEILLEURE MOYENNE</text>
+      <g id="rkBoard">${rankBoardInner()}</g></g>
+    <rect class="hl" x="50" y="16" width="250" height="122" rx="14"/>
+    <g class="tag"><rect x="62" y="134" width="226" height="28" rx="14"/><text x="175" y="153" text-anchor="middle">Classement · voir tout</text></g>
+  </g>`;
   return `<svg class="gym" viewBox="0 -44 1200 684" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Salle de sport : tableau des stats, racks d'haltères, vestiaire et porte vers les courses">
   <defs>
     <linearGradient id="gwall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#16213f"/><stop offset="1" stop-color="#0b1326"/></linearGradient>
@@ -987,7 +990,7 @@ function gymSVG(nAff) {
     <text x="16" y="174" class="bs">POINTS</text><circle cx="94" cy="169" r="8" fill="#ffcc55" filter="url(#glow)"/><text x="94" y="173" text-anchor="middle" font-size="10" font-weight="800" fill="#4a3300" font-family="JetBrains Mono,monospace">P</text><text x="108" y="175" class="bv" style="font-size:17px;fill:#ffcc55">${fmtGain(S.pts || 0)}</text><text x="324" y="174" text-anchor="end" class="bs">SÉRIE ${dd.streak} J</text>
   </g>
 
-  <!-- barème des points -->
+  <!-- classement des joueurs -->
   ${poster}
 
   <!-- VESTIAIRE -->
@@ -1057,12 +1060,8 @@ function gymSVG(nAff) {
     <g class="tag"><rect x="792" y="400" width="136" height="26" rx="13"/><text x="860" y="418" text-anchor="middle">Miroir · garde-robe</text></g>
   </g>
 
-  <!-- vitrine à trophées : clique pour ouvrir le classement -->
-  <g class="hs" data-act="gym" data-to="rank" tabindex="0" role="button" aria-label="Palmarès : le classement des joueurs">
-    <g class="art"><text x="740" y="98" class="bs">PALMARÈS</text>${cups}<rect x="740" y="140" width="256" height="6" rx="3" fill="#3f4e72"/></g>
-    <rect class="hl" x="728" y="84" width="280" height="72" rx="12"/>
-    <g class="tag"><rect x="750" y="152" width="236" height="28" rx="14"/><text x="868" y="171" text-anchor="middle">Palmarès · classement</text></g>
-  </g>
+  <!-- vitrine à trophées -->
+  <g aria-label="Vitrine à trophées"><text x="740" y="98" class="bs">PALMARÈS</text>${cups}<rect x="740" y="140" width="256" height="6" rx="3" fill="#3f4e72"/></g>
 
   <!-- athlète -->
   <g id="ath" style="transform:translate(${hubX}px,592px)">
@@ -1073,6 +1072,28 @@ ${athleteBody(av, 'gshirt')}
     <text x="0" y="34" text-anchor="middle" class="ntag">${nm}</text>
   </g>
 </svg>`;
+}
+/* ---------- mini-classement de la salle (3 premiers + toi) ---------- */
+let RK = null;   // { t, rows, err } : dernier classement chargé
+const rkTxt = (y, s, extra = '') => `<text x="175" y="${y}" text-anchor="middle" class="bs" style="font-size:9.5px;letter-spacing:.06em;${extra}">${s}</text>`;
+function rankBoardInner() {
+  if (!AUTH) return rkTxt(86, 'CONNECTE-TOI POUR VOIR') + rkTxt(100, 'LE CLASSEMENT DES JOUEURS') + rkTxt(114, 'ET Y APPARAÎTRE');
+  if (!RK) return rkTxt(94, 'CHARGEMENT…');
+  if (RK.err) return rkTxt(94, 'CLASSEMENT INDISPONIBLE');
+  if (!RK.rows.length) return rkTxt(94, 'PERSONNE N\'EST ENCORE CLASSÉ');
+  const me = RK.rows.findIndex(r => r.user_id === AUTH.user.id), pick = RK.rows.slice(0, 3).map((r, i) => [i, r]);
+  if (me > 2) pick[2] = [me, RK.rows[me]];
+  const col = i => i === 0 ? '#ffcc55' : i === 1 ? '#cfd6e6' : i === 2 ? '#cd8a4a' : '#7f93b8';
+  return pick.map(([i, r], k) => { const y = 82 + k * 17, mine = r.user_id === AUTH.user.id, nm = esc(String(r.pseudo || 'Athlète').slice(0, 14));
+    return `<g><text x="80" y="${y}" class="bt" style="fill:${col(i)};font-size:13px;font-weight:800">${i + 1}</text><text x="100" y="${y}" class="bt" style="fill:${mine ? '#5ff2d0' : '#e9eefb'};font-size:12px">${nm}</text><text x="270" y="${y}" text-anchor="end" class="bv" style="font-size:12px;fill:${mine ? '#5ff2d0' : '#e9eefb'}">${f1(+r.moyenne)}</text></g>`; }).join('');
+}
+function hubBoardRefresh() { if (view !== 'hub') return; const g = $('#rkBoard'); if (g) g.innerHTML = rankBoardInner(); hubRankFill(); }
+async function hubRankFill() {   // charge le classement (au plus une fois par minute) et redessine la pancarte
+  if (!AUTH || view !== 'hub') return;
+  if (RK && !RK.err && Date.now() - RK.t < 60000) return;
+  try { RK = { t:Date.now(), rows:await sb('/rest/v1/leaderboard?select=user_id,pseudo,moyenne&order=moyenne.desc,updated_at.asc&limit=50', {}, true) }; }
+  catch (e) { RK = { t:Date.now(), rows:[], err:true }; }
+  const g = $('#rkBoard'); if (g && view === 'hub') g.innerHTML = rankBoardInner();
 }
 function viewHub() {
   const nAff = ITEMS.filter(it => (S.pts || 0) + 1e-9 >= MIN_BUY && S.stats[it.stat] < 100).length, dd = dailyState(), done = dd.scores.every(x => x != null);
@@ -1085,6 +1106,7 @@ function viewHub() {
     <button class="gc2" type="button" data-act="gym" data-to="pvp" style="--c:var(--gold)">${ic('trophy', 28)}<div><b>La porte · PvP</b><small>Bientôt disponible</small></div></button>
   </div>
   <p class="hint gymhint" style="margin-top:12px">Fais l'entraînement du jour aux racks : ta note globale te rapporte des points. Dépense-les au vestiaire pour acheter des objets qui font monter tes stats.</p>`;
+  hubRankFill();
 }
 function gymGo(to) {   // un clic ouvre directement la page ; l'athlète reste devant l'élément choisi
   if (to === 'pvp') { Sfx.bad(); toast('Le PvP arrive bientôt : la porte reste fermée pour l\'instant.'); return; }
@@ -1600,8 +1622,8 @@ async function acctLogin(email, pw, create) {
   try {
     const j = await sb(create ? '/auth/v1/signup' : '/auth/v1/token?grant_type=password', { method:'POST', body:JSON.stringify({ email, password:pw }) });
     if (!j || !j.access_token) { cloudMsg = 'Compte créé. Clique sur le lien reçu par e-mail pour le confirmer, puis connecte-toi ici.'; acctRender(true); return; }
-    setSession(j); cloudReady = false; cloudConflict = null; cloudMsg = 'Synchronisation…'; acctRender();
-    await cloudSync(true);
+    setSession(j); RK = null; cloudReady = false; cloudConflict = null; cloudMsg = 'Synchronisation…'; acctRender();
+    await cloudSync(true); hubBoardRefresh();
   } catch (e) { cloudMsg = sbErr(e); acctRender(!AUTH); }
 }
 function acctResolve(useCloud) {
@@ -1610,9 +1632,10 @@ function acctResolve(useCloud) {
   else { S.uid = AUTH.user.id; cloudPush(true); }
 }
 function acctLogout() {
+  RK = null;
   const tok = AUTH && AUTH.access_token; clearTimeout(cloudT);
   if (tok) fetch(SB_URL + '/auth/v1/logout', { method:'POST', headers:{ apikey:SB_KEY, Authorization:'Bearer ' + tok } }).catch(() => {});
-  AUTH = null; authStore(); cloudReady = false; cloudConflict = null; cloudLast = ''; cloudMsg = 'Déconnecté. Ta partie reste sur cet appareil.'; acctRender();
+  AUTH = null; authStore(); cloudReady = false; cloudConflict = null; cloudLast = ''; cloudMsg = 'Déconnecté. Ta partie reste sur cet appareil.'; acctRender(); hubBoardRefresh();
 }
 function acctHTML() {
   if (!AUTH) return `<span class="label">Compte · sauvegarde en ligne</span>
@@ -1670,7 +1693,7 @@ function openSettings() {
       <div class="volrow"><input type="range" id="setVol" min="0" max="100" step="5" aria-label="Volume"><output id="setVolOut"></output></div></div>
     <div class="setrow"><span class="label">Thème</span><div class="seg" id="setTheme">${THEMES.map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="${(S.theme || 'auto') === v}">${l}</button>`).join('')}</div></div>
     <div class="setrow"><span class="label">Partie</span><button class="btn ghost danger" id="btnReset" data-act="reset" type="button">Réinitialiser la partie</button></div>
-    <div class="btnrow"><button class="btn" data-act="closeset" type="button">Fermer</button></div><small style="color:var(--dim);text-align:center">Version 55 · classement</small></div>`;
+    <div class="btnrow"><button class="btn" data-act="closeset" type="button">Fermer</button></div><small style="color:var(--dim);text-align:center">Version 56 · classement dans la salle</small></div>`;
   document.body.appendChild(o);
   const name = $('#setName'), vol = $('#setVol'), out = $('#setVolOut');
   name.value = S.name; vol.value = S.vol == null ? 55 : S.vol; out.textContent = vol.value + ' %';
