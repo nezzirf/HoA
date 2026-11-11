@@ -601,6 +601,14 @@ body:not(.hubmode) #stage{width:100%; max-width:1240px; margin-inline:auto}
 .swrow small{width:56px; font-size:11px; color:var(--muted); font-weight:700}
 .sw{width:24px; height:24px; border-radius:50%; border:2px solid var(--line-2); cursor:pointer; padding:0}
 .sw[aria-pressed="true"]{border-color:var(--fg); box-shadow:0 0 0 2px var(--accent)}
+.rankp{display:flex; flex-direction:column; gap:14px; padding:20px 22px}
+.rankp h2{margin:0; font:800 italic 38px/1 var(--f-display); text-transform:uppercase}
+.rk{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; max-width:640px}
+.rk li{display:grid; grid-template-columns:46px 1fr auto; align-items:center; gap:10px; padding:10px 14px; border-radius:12px; border:1px solid var(--line); background:color-mix(in srgb,var(--card-solid) 70%,transparent)}
+.rk li.me{border-color:var(--accent); background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.rkn{font:800 italic 26px/1 var(--f-display); text-align:center; color:var(--muted)}
+.rkp{font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.rkv{font:700 16px var(--f-mono)}
 .mirrorhd{display:flex; align-items:center; gap:24px; padding:18px 22px; margin-bottom:14px; flex-wrap:wrap}
 .mirbox{width:170px; padding:10px; border-radius:26px; background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 14%,transparent),transparent); border:3px solid color-mix(in srgb,var(--gold) 45%,#5b3f2a)}
 .mirbox svg{display:block; width:100%; height:auto}
@@ -795,7 +803,7 @@ window.addEventListener('keydown', () => Sfx.init(), { capture:true });
    4. HUD, PROFIL, ONGLETS
    ===================================================================== */
 let view = 'hub', lastTab = 'hub', G = null; // G = mini-jeu / scène en cours
-const NAVIGABLE = ['hub', 'shop', 'daily', 'mirror'];
+const NAVIGABLE = ['hub', 'shop', 'daily', 'mirror', 'rank'];
 
 function buildTabs() {}
 function syncTabs() {}
@@ -828,13 +836,13 @@ function go(v) {
   document.body.classList.toggle('hubmode', v === 'hub');
   if (NAVIGABLE.includes(v)) lastTab = v;
   syncTabs();
-  if (v === 'hub') viewHub(); else if (v === 'daily') viewDaily(); else if (v === 'shop') viewShop(); else if (v === 'mirror') viewMirror();
+  if (v === 'hub') viewHub(); else if (v === 'daily') viewDaily(); else if (v === 'shop') viewShop(); else if (v === 'mirror') viewMirror(); else if (v === 'rank') viewRank();
   window.scrollTo({ top:0, behavior:'smooth' });
 }
 
 /* ---------- La salle de sport : hub plein écran, les stats vivent dans le décor ---------- */
 let hubX = 400, hubBusy = false;           // position de l'athlète dans la salle
-const HUB_SPOTS = { shop:176, daily:600, mirror:860 };
+const HUB_SPOTS = { shop:176, daily:600, mirror:860, rank:870 };
 const STAT_HEX = { force:'#ff7a45', speed:'#4ea6ff', endurance:'#b48cff', agility:'#46e08a', precision:'#ff5fa8', mental:'#f2e35b' };
 /* ---------- personnage personnalisable ---------- */
 const SKINS = ['#f6d3b8', '#e8b998', '#d9a98a', '#b9805a', '#8a5a3b', '#5b3a26'];
@@ -998,9 +1006,6 @@ function gymSVG(nAff) {
   </g>
   </g>
 
-  <!-- vitrine à trophées -->
-  <g aria-label="Vitrine à trophées"><text x="740" y="98" class="bs">PALMARÈS</text>${cups}<rect x="740" y="140" width="256" height="6" rx="3" fill="#3f4e72"/></g>
-
   <!-- RACKS D'HALTÈRES : au milieu, sous le tableau -->
   <g transform="translate(600 198) scale(.85) translate(-871 -152)">
   <g class="hs" data-act="gym" data-to="daily" tabindex="0" role="button" aria-label="Racks d'haltères : l'entraînement du jour">
@@ -1052,6 +1057,13 @@ function gymSVG(nAff) {
     <g class="tag"><rect x="792" y="400" width="136" height="26" rx="13"/><text x="860" y="418" text-anchor="middle">Miroir · garde-robe</text></g>
   </g>
 
+  <!-- vitrine à trophées : clique pour ouvrir le classement -->
+  <g class="hs" data-act="gym" data-to="rank" tabindex="0" role="button" aria-label="Palmarès : le classement des joueurs">
+    <g class="art"><text x="740" y="98" class="bs">PALMARÈS</text>${cups}<rect x="740" y="140" width="256" height="6" rx="3" fill="#3f4e72"/></g>
+    <rect class="hl" x="728" y="84" width="280" height="72" rx="12"/>
+    <g class="tag"><rect x="750" y="152" width="236" height="28" rx="14"/><text x="868" y="171" text-anchor="middle">Palmarès · classement</text></g>
+  </g>
+
   <!-- athlète -->
   <g id="ath" style="transform:translate(${hubX}px,592px)">
     <g id="athFlip" transform="scale(1 1)">
@@ -1069,6 +1081,7 @@ function viewHub() {
     <button class="gc2" type="button" data-act="gym" data-to="daily" style="--c:var(--force)">${ic('dumbbell', 28)}<div><b>Entraînement du jour</b><small>${done ? 'Terminé' + (dd.result ? ' · note ' + dd.result.grade : '') + ' · à demain' : DAILY.length + ' épreuves · 1 fois par jour'}</small></div></button>
     <button class="gc2" type="button" data-act="gym" data-to="shop" style="--c:var(--accent)">${ic('chest', 28)}<div><b>Vestiaire</b><small>${fmtGain(S.pts || 0)} point${(S.pts || 0) > 1 ? 's' : ''} · ${nAff ? nAff + ' objet' + (nAff > 1 ? 's' : '') + ' à ta portée' : 'des objets pour monter tes stats'}</small></div></button>
     <button class="gc2" type="button" data-act="gym" data-to="mirror" style="--c:var(--prec)">${ic('target', 28)}<div><b>Miroir</b><small>Garde-robe · ${ACCS.filter(accOpen).length} / ${ACCS.length} accessoires débloqués</small></div></button>
+    <button class="gc2" type="button" data-act="gym" data-to="rank" style="--c:var(--gold)">${ic('trophy', 28)}<div><b>Classement</b><small>Qui a la meilleure moyenne ?</small></div></button>
     <button class="gc2" type="button" data-act="gym" data-to="pvp" style="--c:var(--gold)">${ic('trophy', 28)}<div><b>La porte · PvP</b><small>Bientôt disponible</small></div></button>
   </div>
   <p class="hint gymhint" style="margin-top:12px">Fais l'entraînement du jour aux racks : ta note globale te rapporte des points. Dépense-les au vestiaire pour acheter des objets qui font monter tes stats.</p>`;
@@ -1106,6 +1119,24 @@ function wardrobeHTML() {
       <div><div class="gtag">${open ? (on ? 'Équipé' : 'Débloqué') : 'Moyenne ' + a.lvl + ' requise'}</div><h3>${a.n}</h3></div>
       <button class="btn ${on ? 'ghost' : ''}" data-act="acc" data-id="${a.id}" ${open ? '' : 'disabled'}>${open ? (on ? 'Retirer' : 'Équiper') : 'Verrouillé'}</button>
     </article>`; }).join('')}</div>`;
+}
+/* ---------- Classement : les joueurs connectés, triés par moyenne ---------- */
+async function viewRank() {
+  const draw = html => { if (view === 'rank') stage.innerHTML = homeBtn() + `<section class="glass rankp"><div class="label">Classement</div><h2>Meilleure moyenne</h2>${html}</section>`; };
+  if (!AUTH) { draw(`<p class="hint">Le classement réunit les joueurs qui ont un compte. Connecte-toi pour y apparaître et voir où tu te situes.</p><div class="btnrow"><button class="btn" data-act="settings" type="button">Me connecter</button></div>`); return; }
+  draw('<p class="hint">Chargement du classement…</p>');
+  try {
+    if (cloudReady && !D) await cloudPush();                                   // envoie d'abord ta partie à jour
+    const rows = await sb('/rest/v1/leaderboard?select=user_id,pseudo,moyenne&order=moyenne.desc,updated_at.asc&limit=50', {}, true);
+    if (view !== 'rank') return;
+    const me = rows.findIndex(r => r.user_id === AUTH.user.id);
+    const medal = i => i === 0 ? '#ffcc55' : i === 1 ? '#cfd6e6' : i === 2 ? '#cd8a4a' : '';
+    draw(`<p class="hint">${me >= 0 ? `Tu es <b style="color:var(--accent)">${me + 1}${me === 0 ? 'er' : 'e'}</b> sur ${rows.length} joueur${rows.length > 1 ? 's' : ''}, avec une moyenne de ${f1(+rows[me].moyenne)}.` : (rows.length ? 'Tu n\'es pas encore dans le top 50.' : 'Personne n\'est encore classé.')}</p>
+      <ol class="rk">${rows.map((r, i) => `<li class="${r.user_id === AUTH.user.id ? 'me' : ''}"><span class="rkn" style="${medal(i) ? 'color:' + medal(i) : ''}">${i + 1}</span><span class="rkp">${esc(r.pseudo || 'Athlète')}</span><b class="rkv">${f1(+r.moyenne)}</b></li>`).join('')}</ol>
+      <div class="btnrow"><button class="btn ghost" data-act="rankrefresh" type="button">Actualiser</button></div>`);
+  } catch (e) {
+    draw(`<p class="hint">${e.status === 404 || /leaderboard|PGRST205|schema cache/i.test(e.message) ? 'Le classement n\'est pas encore activé dans Supabase (il manque le SQL du classement).' : esc(sbErr(e))}</p><div class="btnrow"><button class="btn ghost" data-act="rankrefresh" type="button">Réessayer</button></div>`);
+  }
 }
 function viewMirror() {
   const av = avOf();
@@ -1639,7 +1670,7 @@ function openSettings() {
       <div class="volrow"><input type="range" id="setVol" min="0" max="100" step="5" aria-label="Volume"><output id="setVolOut"></output></div></div>
     <div class="setrow"><span class="label">Thème</span><div class="seg" id="setTheme">${THEMES.map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="${(S.theme || 'auto') === v}">${l}</button>`).join('')}</div></div>
     <div class="setrow"><span class="label">Partie</span><button class="btn ghost danger" id="btnReset" data-act="reset" type="button">Réinitialiser la partie</button></div>
-    <div class="btnrow"><button class="btn" data-act="closeset" type="button">Fermer</button></div><small style="color:var(--dim);text-align:center">Version 54 · modèle 3D</small></div>`;
+    <div class="btnrow"><button class="btn" data-act="closeset" type="button">Fermer</button></div><small style="color:var(--dim);text-align:center">Version 55 · classement</small></div>`;
   document.body.appendChild(o);
   const name = $('#setName'), vol = $('#setVol'), out = $('#setVolOut');
   name.value = S.name; vol.value = S.vol == null ? 55 : S.vol; out.textContent = vol.value + ' %';
@@ -1679,6 +1710,7 @@ document.addEventListener('click', e => {
   else if (a === 'dcopy') { const t = dailyShareText(); if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(() => toast('Résultat copié.'), () => toast('Sélectionne le texte pour le copier.', 'bad')); else toast('Sélectionne le texte pour le copier.', 'bad'); }
   else if (a === 'buy') buyItem(b.dataset.id, b.dataset.v);
   else if (a === 'acc') toggleAcc(b.dataset.id);
+  else if (a === 'rankrefresh') viewRank();
   else if (a === 'mute') { S.muted = !S.muted; updateHud(); save(); if (!S.muted) Sfx.ok(); }
   else if (a === 'reset') {
     if (!resetArmed) { resetArmed = true; b.classList.add('armed'); b.textContent = 'Confirmer ?'; resetT = setTimeout(disarm, 3000); }
