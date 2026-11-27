@@ -1256,7 +1256,7 @@ const DAILY = [
   { id:'gainage', stat:'force',     name:'Gainage',       icon:'dumbbell', play:gGainage, rule:'Maintiens pour pousser, relâche pour laisser retomber. Garde la barre dans la zone verte qui ondule pendant 22 secondes : tu vois la zone arriver. La courbe change chaque jour.' },
   { id:'tuiles',  stat:'speed',     name:'Tuiles éclair', icon:'bolt',     play:gTuiles,  rule:'Touche la tuile bleue, la suivante s’allume aussitôt. Les tuiles rouges sont des pièges. Chaque tuile s’éteint de plus en plus vite : le temps passe vite et chaque erreur coûte cher. L’ordre change chaque jour.' },
   { id:'tempo',   stat:'endurance', name:'Tempo',         icon:'pulse',    play:gTempo,   rule:'Tape en rythme avec les clics. Après 4 appuis, le métronome s’arrête : continue le même rythme pour 8 appuis de plus. Le tempo change chaque jour.' },
-  { id:'esquive', stat:'agility',   name:'Esquive',       icon:'run',      play:gEsquive, rule:'Tu cours de plus en plus vite : saute les blocs orange, saute les piliers violets au bon moment (il faut être presque au sommet du saut), baisse-toi sous les barres roses. Espace ou ↑ pour sauter, ↓ pour te baisser (ou moitiés haute et basse de l’écran). 22 obstacles qui surgissent tard, dans un ordre différent chaque jour.' },
+  { id:'esquive', stat:'agility',   name:'Esquive',       icon:'run',      play:gEsquive, rule:'Tu cours de plus en plus vite : saute les blocs orange, saute les piliers violets au bon moment (il faut être presque au sommet du saut), baisse-toi sous les barres roses. Espace, Z ou ↑ pour sauter, S ou ↓ pour te baisser (ou moitiés haute et basse de l’écran). 22 obstacles qui surgissent tard, dans un ordre différent chaque jour.' },
   { id:'tir',     stat:'precision', name:'Stand de tir',  icon:'target',   play:gTir,     rule:'Quatorze cibles apparaissent une à une : elles rétrécissent, filent de plus en plus vite et durent de moins en moins longtemps. Ton viseur tremble. Un tir par cible, vise le centre, et ne touche pas les civils verts. Les positions changent chaque jour.' },
   { id:'stroop',  stat:'mental',    name:'Focus',         icon:'brain',    play:gStroop,  rule:'Un mot de couleur s’affiche : réponds selon la règle indiquée (couleur de l’encre ou du mot). 20 mots, 2,6 s chacun. La suite change chaque jour.' }
 ];
@@ -1388,7 +1388,7 @@ async function gTuiles(el, rnd, variant) {
 
 /* ---------- AGILITÉ : esquive — saute les blocs, passe les piliers au bon moment, baisse-toi sous les barres (vitesse croissante) ---------- */
 async function gEsquive(el, rnd, variant) {
-  const c = dCanvas(el, 'Saute avec <kbd>Espace</kbd> ou <kbd>↑</kbd> (moitié haute de l’écran). Baisse-toi avec <kbd>↓</kbd> (moitié basse). Tu ne peux ni sauter ni te baisser en l’air.'), { ctx, cv } = c, joker = variant === 'joker';
+  const c = dCanvas(el, 'Saute avec <kbd>Espace</kbd>, <kbd>Z</kbd> ou <kbd>↑</kbd> (moitié haute de l’écran). Baisse-toi avec <kbd>S</kbd> ou <kbd>↓</kbd> (moitié basse). Tu ne peux ni sauter ni te baisser en l’air.'), { ctx, cv } = c, joker = variant === 'joker';
   const N = joker ? 24 : 22, V0 = joker ? 560 : 500, ACC = joker ? 24 : 20, GR = 380, RX = 170, SEE = 470, DUCK = .38;   // SEE : distance de visibilité (les obstacles surgissent tard)
   const sOf = t => V0 * t + .5 * ACC * t * t;                       // distance parcourue : la course accélère
   const SPEC = { low:{ hw:24, h:54, clear:60 }, tall:{ hw:22, h:86, clear:92 }, high:{ hw:40 } };   // clear : hauteur de pied à atteindre pour passer
@@ -1405,7 +1405,8 @@ async function gEsquive(el, rnd, variant) {
   const jump = t => { if (!doJump(t)) bufT = t; };
   const duck = t => { if (grounded()) { duckUntil = t + DUCK; Sfx.step(false); } };
   D.dbg = { obs, now:() => tNow };
-  dOn(window, 'keydown', e => { if (e.repeat) return; if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); jump(tNow); } else if (e.code === 'ArrowDown') { e.preventDefault(); duck(tNow); } });
+  dOn(window, 'keydown', e => { if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return; const k = (e.key || '').toLowerCase();   // e.key : suit la disposition du clavier (Z est bien Z en AZERTY)
+    if (e.code === 'Space' || e.code === 'ArrowUp' || k === 'z') { e.preventDefault(); jump(tNow); } else if (e.code === 'ArrowDown' || k === 's') { e.preventDefault(); duck(tNow); } });
   dOn(cv, 'pointerdown', e => { e.preventDefault(); c.toL(e).y < CH / 2 ? jump(tNow) : duck(tNow); });
   for (const s of ['3', '2', '1']) { await dAnim(600, e => { clr(ctx); TX(ctx, s, 400, 250, { ...BIG, s:110, al:Math.max(.3, 1 - e / 600 * .7) }); }); Sfx.count(); }
   await dAnim(END * 1000, e => {
@@ -1744,7 +1745,7 @@ function openSettings() {
       <div class="volrow"><input type="range" id="setVol" min="0" max="100" step="5" aria-label="Volume"><output id="setVolOut"></output></div></div>
     <div class="setrow"><span class="label">Thème</span><div class="seg" id="setTheme">${THEMES.map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="${(S.theme || 'auto') === v}">${l}</button>`).join('')}</div></div>
     <div class="setrow"><span class="label">Partie</span><button class="btn ghost danger" id="btnReset" data-act="reset" type="button">Réinitialiser la partie</button></div>
-    <div class="btnrow"><button class="btn" data-act="closeset" type="button">Fermer</button></div><small style="color:var(--dim);text-align:center">Version 59 · exercices animés</small></div>`;
+    <div class="btnrow"><button class="btn" data-act="closeset" type="button">Fermer</button></div><small style="color:var(--dim);text-align:center">Version 60 · touches Z et S</small></div>`;
   document.body.appendChild(o);
   const name = $('#setName'), vol = $('#setVol'), out = $('#setVolOut');
   name.value = S.name; vol.value = S.vol == null ? 55 : S.vol; out.textContent = vol.value + ' %';
